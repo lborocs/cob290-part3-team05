@@ -1,0 +1,40 @@
+name: GCP Deploy
+
+on:
+  push:
+    branches:
+      - main # Whenever you push to the main branch, this job will run
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest #This has a warning, the warning is saying that 2.04.6 is a lower version than 2.04.5... what
+
+    # GitHub secrets used to store env variables and login details
+    # GCP_SSH_PRIVATE_KEY - ubuntu private ssh key
+    # UBUNTU_LOGIN - ubuntu@external_ip
+    # DB_LOGIN - database login details
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Add SSH Key to SSH Agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.GCP_SSH_PRIVATE_KEY }} # Private Key to log into Ubuntu
+
+      - name: Create/Wipe Repo folder
+        run: |
+          ssh -o StrictHostKeyChecking=no "${{ secrets.UBUNTU_LOGIN }}" "rm -rf /home/ubuntu/repo && mkdir -p /home/ubuntu/repo"
+
+      - name: Upload project to VM
+        run: |
+          scp -o StrictHostKeyChecking=no -r ./* "${{ secrets.UBUNTU_LOGIN }}":/home/ubuntu/repo
+
+      - name: Create .env file
+        run: |
+          echo '${{ secrets.DB_LOGIN }}' > .env
+          scp -o StrictHostKeyChecking=no .env "${{ secrets.UBUNTU_LOGIN }}":/home/ubuntu/repo/.env
+
+      - name: Deploy to Google Cloud VM
+        run: |
+          ssh -o StrictHostKeyChecking=no "${{ secrets.UBUNTU_LOGIN }}" 'bash -s' < ./deploy.sh
