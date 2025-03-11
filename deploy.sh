@@ -70,8 +70,12 @@ echo "Pushing .htaccess..."
 sudo cp -r $ROOT_DIR/.htaccess $TARGET_DIR/
 
 # Push .env
-echo "Pushing environment variables"
-sudo cp -r $REPO_DIR/.env $TARGET_BACKEND/
+if [ -f "$REPO_DIR/.env" ]; then
+    echo "Pushing environment variables"
+    sudo cp -r $REPO_DIR/.env $TARGET_BACKEND/
+else
+    echo "Warning: .env file not found in $REPO_DIR"
+fi
 
 # Restart Apache
 echo "Restarting Apache..."
