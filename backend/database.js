@@ -15,13 +15,13 @@ const pool = mysql.createPool({
 
 // These are example queries
 
-// GET /
+// GET /users
 export async function getUsers() {
     const [rows] =  await pool.query("SELECT * FROM users")
     return rows
 }
 
-// GET /:id
+// GET /user/:id
 export async function getUser(id) {
     const [rows] = await pool.query(`
     SELECT * 
@@ -32,7 +32,7 @@ export async function getUser(id) {
     return rows[0]
 }
 
-// POST /
+// POST /users
 export async function createUser(userEmail, firstName, lastName, userType) {
     const baseId = firstName + lastName[0]
     let id = baseId

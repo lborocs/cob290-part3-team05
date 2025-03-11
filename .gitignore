@@ -12,9 +12,8 @@ node_modules/
 dist
 dist-ssr
 
-
 # Database creds
-.env
+.env*
 *.local
 
 # Editor directories and files

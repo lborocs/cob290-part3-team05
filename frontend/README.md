@@ -1,4 +1,10 @@
-# React + Vite
+## Tailwind
+
+This project uses Tailwind v4 for styling
+
+All custom styling is done in [index.css](./src/index.css)
+
+## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
