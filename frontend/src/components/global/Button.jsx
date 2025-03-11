@@ -2,7 +2,7 @@ const Button = ({Text,Function,className}) => {
 
   return (
     <>
-        <button className= "flex bg-mint-500 text-white" onClick={Function}>
+        <button className= "flex bg-blue-500 text-white" onClick={Function}>
             {Text}
         </button>
     </>

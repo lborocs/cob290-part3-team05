@@ -18,6 +18,7 @@ const pool = mysql.createPool({
 // GET /users
 export async function getUsers() {
     const [rows] =  await pool.query("SELECT * FROM users")
+    console.log(process.env.DB_USERNAME)
     return rows
 }
 
@@ -50,5 +51,4 @@ export async function createUser(userEmail, firstName, lastName, userType) {
     
     // Return new ID
     return getUser(userID) 
-
 }
