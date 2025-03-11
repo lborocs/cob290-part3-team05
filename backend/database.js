@@ -16,14 +16,8 @@ const pool = mysql.createPool({
 
 // GET /users
 export async function getUsers() {
-  try {
     const [rows] = await pool.query("SELECT * FROM Users");
-    console.log(process.env.DB_USERNAME);  // You can check if the env vars are loading properly here
     return rows;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error;
-  }
 }
 
 // GET /user/:id
