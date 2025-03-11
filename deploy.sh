@@ -69,6 +69,10 @@ sudo npm install --production
 echo "Pushing .htaccess..."
 sudo cp -r $ROOT_DIR/.htaccess $TARGET_DIR/
 
+# Push .env
+echo "Pushing environment variables"
+sudo cp -r $REPO_DIR/.env $TARGET_BACKEND/
+
 # Restart Apache
 echo "Restarting Apache..."
 sudo systemctl restart apache2

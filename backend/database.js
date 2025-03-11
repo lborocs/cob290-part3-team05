@@ -2,7 +2,7 @@ import mysql from 'mysql2'
 import dotenv from 'dotenv'
 
 // Note ".env" is a local only file which is why there won't be one when we clone from repo
-dotenv.config({ path: '../.env' });
+dotenv.config({ path: './.env' });
 
 // Fetching db info from enviroment vars ".env" - Will use github secrets to set up
 const pool = mysql.createPool({
