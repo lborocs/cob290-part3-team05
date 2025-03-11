@@ -49,7 +49,7 @@ sudo cp -r $BACKEND_DIR/* $TARGET_BACKEND/
 # Install backend production dependencies
 echo "Installing backend production dependencies..."
 cd $TARGET_BACKEND
-npm install --production
+sudo npm install --production
 
 # Push .htaccess file (if needed)
 echo "Pushing .htaccess..."
