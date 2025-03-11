@@ -5,6 +5,7 @@ FRONTEND_DIR="$REPO_DIR/frontend"
 BUILD_DIR="$FRONTEND_DIR/dist"  # This is where the frontend build files should go
 TARGET_DIR="/var/www/html"  # Where Apache serves the frontend
 TARGET_BACKEND="/var/www/html/api"  # Backend directory
+PM2_APP_NAME="express-app" # Name of pm2 app to run
 
 # Check build directory contents before copying
 echo "Checking the build directory..."
@@ -76,6 +77,10 @@ if [ -f "$REPO_DIR/.env" ]; then
 else
     echo "Warning: .env file not found in $REPO_DIR"
 fi
+
+# Restart pm2 service
+echo "Restarting pm2 server"
+pm2 restart $PM2_APP_NAME
 
 # Restart Apache
 echo "Restarting Apache..."
