@@ -12,13 +12,12 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'make_it_all'
 }).promise()
 
-
-// These are example queries
+// USER QUERIES
 
 // GET /users
 export async function getUsers() {
   try {
-    const [rows] = await pool.query("SELECT * FROM users");
+    const [rows] = await pool.query("SELECT * FROM Users");
     console.log(process.env.DB_USERNAME);  // You can check if the env vars are loading properly here
     return rows;
   } catch (error) {
@@ -31,7 +30,7 @@ export async function getUsers() {
 export async function getUser(id) {
     const [rows] = await pool.query(`
     SELECT * 
-    FROM users
+    FROM Users
     WHERE userID = ?
     `, [id])
     console.log(rows[0])
@@ -40,7 +39,8 @@ export async function getUser(id) {
 
 // POST /users
 export async function createUser(userEmail, firstName, lastName, userType) {
-    const baseId = firstName + lastName[0]
+  // Commented off for discussion on how userID should be done
+  /*const baseId = firstName + lastName[0]
     let id = baseId
     let num = 1
     while (await getUser(id)) {
@@ -50,10 +50,19 @@ export async function createUser(userEmail, firstName, lastName, userType) {
     const userID = id.toLowerCase()
     console.log(userID)
     const [result] = await pool.query(`
-    INSERT INTO users (userID, userEmail, firstName, lastName, userType)
+    INSERT INTO Users (userID, userEmail, firstName, lastName, userType)
     VALUES (?, ?, ?, ?, ?)
     `, [userID, userEmail, firstName, lastName, userType])
     
     // Return new ID
-    return getUser(userID) 
+    return getUser(userID) */
+
+    const [result] = await pool.query(`
+    INSERT INTO Users (userEmail, firstName, lastName, userType)
+    VALUES (?, ?, ?, ?)
+    `, [userEmail, firstName, lastName, userType])
+  
+    // Return the newly created user with the auto-incremented ID
+    const newUser = await getUser(result.insertId);
+    return newUser;
 }
