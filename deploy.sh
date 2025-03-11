@@ -43,6 +43,8 @@ sudo rm -rf $TARGET_DIR/*
 if [ -d "/home/ubuntu/phpmyadmin_backup" ]; then
     echo "Restoring phpMyAdmin..."
     cp -r /home/ubuntu/phpmyadmin_backup /var/www/html/
+    echo "Rename backup to phpmyadmin"
+    mv /var/www/html/phpmyadmin_backup /var/www/html/phpmyadmin
 fi
 
 # Copy new build to target directory
