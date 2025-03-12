@@ -32,7 +32,7 @@ function App() {
   return (
     <>
       <div className="bg-blue-500 text-white p-4 text-xl">
-        Tailwind is working! 🚀
+        Tailwind is working! 
       </div>
       <Button Text={"Hello This is a Button"} />
     </>

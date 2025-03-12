@@ -33,24 +33,6 @@ export async function getUser(id) {
 
 // POST /users
 export async function createUser(userEmail, firstName, lastName, userType) {
-  // Commented off for discussion on how userID should be done
-  /*const baseId = firstName + lastName[0]
-    let id = baseId
-    let num = 1
-    while (await getUser(id)) {
-      id = baseId + num
-      num++
-    }
-    const userID = id.toLowerCase()
-    console.log(userID)
-    const [result] = await pool.query(`
-    INSERT INTO Users (userID, userEmail, firstName, lastName, userType)
-    VALUES (?, ?, ?, ?, ?)
-    `, [userID, userEmail, firstName, lastName, userType])
-    
-    // Return new ID
-    return getUser(userID) */
-
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
     VALUES (?, ?, ?, ?)
