@@ -14,7 +14,7 @@ function App() {
     // Fetch data using fetch API
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://34.147.242.96:8080/users'); // Replace with your API URL
+        const response = await fetch('/api/users'); // Replace with your API URL
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }

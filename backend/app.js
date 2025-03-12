@@ -17,9 +17,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json())
 
+// This is the port being locked for server calls only
 const apiServer = 'http://34.147.242.96:8080';
 
 // Create a reverse proxy middleware
+// This essentially prevents access through port 8080 and allows access through port 3000
 app.use('/api', createProxyMiddleware({
   target: apiServer,  // Where to forward the request
   changeOrigin: true,  // Changes the origin header to match the target
