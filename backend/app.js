@@ -25,9 +25,7 @@ const apiServer = 'http://34.147.242.96:8080';
 app.use('/api', createProxyMiddleware({
   target: apiServer,  // Where to forward the request
   changeOrigin: true,  // Changes the origin header to match the target
-  pathRewrite: {
-    '^/api': '', // Remove '/api' prefix when forwarding to the backend
-  },
+  pathRewrite: { '^/api': '', },
   onProxyReq: (proxyReq, req, res) => {
     // You can manipulate the request before it's sent to the target server here if needed
     console.log(`Proxying request to: ${apiServer}${req.url}`);

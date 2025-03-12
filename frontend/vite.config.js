@@ -11,9 +11,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://34.147.242.96:8080',  // Backend API
+        target: 'http://localhost:3000', // Proxy to Express server
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '') // Remove `/api` before forwarding
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
