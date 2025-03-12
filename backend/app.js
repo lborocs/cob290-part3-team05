@@ -3,6 +3,8 @@ import cors from 'cors';
 
 import { getUsers, getUser, createUser } from './database.js'
 
+const app = express()
+
 // Define CORS options
 const corsOptions = {
   origin: 'http://34.147.242.96', // Allow requests only from this origin (your frontend domain)
@@ -12,8 +14,6 @@ const corsOptions = {
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
-
-const app = express()
 
 app.use(express.json())
 
