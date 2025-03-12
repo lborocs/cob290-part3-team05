@@ -11,19 +11,18 @@ function App() {
 
   // Fetch data from API when the component mounts
   useEffect(() => {
-    // Fetch data using fetch API
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/users'); // Replace with your API URL
+        const response = await fetch('/api/users');
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
         const data = await response.json();
-        setUsers(data); // Set the data into state
-        setLoading(false);
+        setUsers(data);
+        setLoading(false); // Set loading to false once data is fetched
       } catch (error) {
-        setError(error.message); // Handle any error that occurs
-        setLoading(false);
+        setError(error.message); // Set the error message
+        setLoading(false); // Set loading to false even if an error occurs
       }
     };
 

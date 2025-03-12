@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import { getUsers, getUser, createUser } from './database.js'
 
@@ -15,6 +16,14 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 app.use(express.json())
+
+app.use('/api', createProxyMiddleware({
+  target: 'http://localhost:8080',  // Backend server
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api': '',  // Remove /api prefix when forwarding to backend
+  },
+}));
 
 
 app.get("/users", async (req, res) => {
@@ -40,8 +49,8 @@ app.use((err, req, res, next) => {
   res.status(500).send('Server Error')
 })
 
-app.listen(8080, '0.0.0.0', () => {
-  console.log('Server is running on port 8080');
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Server is running on port 3000');
 });
 
 
