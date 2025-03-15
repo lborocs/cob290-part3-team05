@@ -9,7 +9,6 @@ import Login from './pages/Login';
 import Chats from './pages/Chats';
 
 
-
 function App() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
