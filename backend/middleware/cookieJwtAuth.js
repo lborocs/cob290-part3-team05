@@ -1,21 +1,23 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const bodyParser = require('body-parser');
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-const app = express();
-const PORT = 8080;
+dotenv.config();
 
-app.use(bodyParser.json()); // For parsing JSON bodies
-
-// Dummy database (you'll use an actual database in production)
-const users = [
-  {
-    id: 1,
-    username: "john_doe",
-    password: "$2a$10$KqGH2jcG.bKht0i6XQ/RnO/69n3uUpPL.P90s39OtW1x0N/QmrH9a" // hashed password for "password123"
+export const cookieJwtAuth = (req, res, next) => {
+  // Get token from Authorization header
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Access denied. No token provided.' });
   }
-];
-
-// JWT Secret Key (Use a more secure secret in production)
-const JWT_SECRET = 'your_jwt_secret_key';
+  
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const verified = jwt.verify(token, process.env.MY_SECRET);
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};

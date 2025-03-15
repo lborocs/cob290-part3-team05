@@ -1,6 +1,24 @@
 @import "tailwindcss";
 
-
-@theme {
-  --color-mint-500: oklch(0.72 0.11 178);
+@layer base {
+  :root {
+    --color-mint-500: oklch(0.72 0.11 178);
+    --color-base: #FFFFFF;
+    --color-overlay: #1C2341;
+    --color-title: #1C2341;
+    --color-subtitle: #2E3944;
+    --color-highlight: #124E66;
+    --color-disabled: #B3B4BD;
+    --color-black: #000000;
+    --color-white: #FFFFFF;
+    --color-text: #000000;
+    --color-hover: #748D92;
+    --color-warning: #FCA311;
+    --color-overdue: #FF481B;
+    --color-danger: #FF481B;
+    --color-component: #D3D9D4;
+    --color-lighter-component: #f4f4f4;
+    --color-component-header-bg: #124E66;
+    --color-component-header-text: #FFFFFF;
+  }
 }

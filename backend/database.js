@@ -42,4 +42,3 @@ export async function createUser(userEmail, firstName, lastName, userType) {
     const newUser = await getUser(result.insertId);
     return newUser;
 }
-

@@ -2,7 +2,7 @@ const Button = (props) => {
 
   return (
     <>
-        <button className= "flex bg-blue-500 text-white" onClick={props.Function}>
+        <button className= "flex bg-[var(--color-overlay))] text-white py-[0.5rem] space-x-[0.3rem]" onClick={props.Function}>
             {props.children}
         </button>
     </>
