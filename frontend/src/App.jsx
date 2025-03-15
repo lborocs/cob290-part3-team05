@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import Button from './components/global/Button'
+import { Route, Routes } from 'react-router-dom'; // Import routing components
+
+import Layout from './pages/Layout';
+import Dashboard from './pages/Dashboard'
+import NoPage from './pages/NoPage';
+import Login from './pages/Login';
+
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,12 +36,18 @@ function App() {
 
   return (
     <>
-      <div className="bg-blue-500 text-white p-4 text-xl">
-        Tailwind is working! 
-      </div>
-      <Button Text={"Hello This is a Button"} />
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="*" element={<NoPage />} />
+      </Route>
+    </Routes>
     </>
   )
 }
+/*
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);*/
 
 export default App
