@@ -32,7 +32,7 @@ export async function getUser(id) {
 }
 
 // POST /users
-export async function createUser(userEmail, firstName, lastName, userType) {
+/*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
     VALUES (?, ?, ?, ?)
@@ -41,4 +41,26 @@ export async function createUser(userEmail, firstName, lastName, userType) {
     // Return the newly created user with the auto-incremented ID
     const newUser = await getUser(result.insertId);
     return newUser;
-}
+}*/
+
+// Get user by email
+export async function getUserByEmail(email) {
+    const [rows] = await pool.query(`
+      SELECT * 
+      FROM Users
+      WHERE userEmail = ?
+    `, [email])
+    return rows[0]
+  }
+  
+  // Create user with password hash
+  export async function createUser(userEmail, firstName, lastName, userType, passwordHash) {
+    const [result] = await pool.query(`
+      INSERT INTO Users (userEmail, firstName, lastName, userType, passwordHash)
+      VALUES (?, ?, ?, ?, ?)
+    `, [userEmail, firstName, lastName, userType, passwordHash])
+    
+    // Return the newly created user with the auto-incremented ID
+    const newUser = await getUser(result.insertId);
+    return newUser;
+  }

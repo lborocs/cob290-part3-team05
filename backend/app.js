@@ -1,37 +1,43 @@
 import express from 'express'
 import cors from 'cors';
 import { getUsers, getUser, createUser } from './database.js'
+import loginRoutes from './routes/login.js'
+import { cookieJwtAuth } from './middleware/cookieJwtAuth.js'
 
 const app = express()
 
 // Define CORS options
 const corsOptions = {
-  origin: 'http://34.147.242.96', // Allow requests only from frontend
+  origin: ['http://34.147.242.96', 'http://localhost:3000', 'http://localhost:5173'], // Add local development URLs
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow these HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Specify allowed headers 
+  credentials: true // This is important for cookies/authxw
 };
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
 app.use(express.json())
 
-app.get("/users", async (req, res) => {
+// Apply login routes
+app.use('/login', loginRoutes);
+
+// Protected routes
+app.get("/users", cookieJwtAuth, async (req, res) => {
   const users = await getUsers()
   res.send(users)
 })
 
-app.get("/users/:id", async (req, res) => {
+app.get("/users/:id", cookieJwtAuth, async (req, res) => {
   const id = req.params.id
   const user = await getUser(id)
   res.send(user)
 })
 
-app.post("/users", async (req, res) => {
+app.post("/users", cookieJwtAuth, async (req, res) => {
   const { userEmail, firstName, lastName, userType } = req.body
   const user = await createUser(userEmail, firstName, lastName, userType)
   res.status(201).send(user)
 })
-
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
@@ -39,5 +45,5 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(8080, '0.0.0.0', () => {
-  console.log('Server is running on port 3000');
+  console.log('Server is running on port 8080');
 });
