@@ -39,6 +39,10 @@ app.post("/users", cookieJwtAuth, async (req, res) => {
   res.status(201).send(user)
 })
 
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack)
   res.status(500).send('Server Error')
