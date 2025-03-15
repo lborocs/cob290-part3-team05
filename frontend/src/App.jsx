@@ -3,8 +3,6 @@ import './App.css'
 import Button from './components/global/Button'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
