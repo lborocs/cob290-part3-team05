@@ -1,9 +1,9 @@
-const Button = ({Text,Function,className}) => {
+const Button = (props) => {
 
   return (
     <>
-        <button className= "flex bg-blue-500 text-white" onClick={Function}>
-            {Text}
+        <button className= "flex bg-blue-500 text-white" onClick={props.Function}>
+            {props.children}
         </button>
     </>
   )
