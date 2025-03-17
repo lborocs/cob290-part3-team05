@@ -1,8 +1,8 @@
-const Button = (props) => {
+const Button = ({className="",...props}) => {
 
   return (
     <>
-        <button className= "flex bg-blue-500 text-white" onClick={props.Function}>
+        <button className= {`flex ${className}`} onClick={props.onClick}>
             {props.children}
         </button>
     </>
