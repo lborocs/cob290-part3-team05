@@ -6,6 +6,8 @@ import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
 import NoPage from './pages/NoPage';
 import Login from './pages/Login';
+import ManagerAnalytics from './pages/ManagerAnalytics';
+
 
 
 
@@ -40,7 +42,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
+        <Route path="manager-analytics" element={<ManagerAnalytics />} />
         <Route path="*" element={<NoPage />} />
+        
       </Route>
     </Routes>
     </>
