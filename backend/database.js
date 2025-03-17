@@ -14,16 +14,26 @@ const pool = mysql.createPool({
 
 // USER QUERIES
 
+// GET /users/:email
+export async function getUserByEmail(email) {
+    const [rows] = await pool.query(`
+      SELECT userID, userEmail, firstName, lastName, userType 
+      FROM Users
+      WHERE userEmail = ?
+    `, [email])
+    return rows[0]
+  }
+
 // GET /users
 export async function getUsers() {
-    const [rows] = await pool.query("SELECT * FROM Users");
+    const [rows] = await pool.query("SELECT userID, userEmail, firstName, lastName, userType FROM Users");
     return rows;
 }
 
 // GET /user/:id
 export async function getUser(id) {
     const [rows] = await pool.query(`
-    SELECT * 
+    SELECT userID, userEmail, firstName, lastName, userType
     FROM Users
     WHERE userID = ?
     `, [id])
@@ -32,12 +42,12 @@ export async function getUser(id) {
 }
 
 // POST /users
-export async function createUser(userEmail, firstName, lastName, userType) {
+export async function createUser(userEmail, firstName, lastName, userType, passwordHash) {
     const [result] = await pool.query(`
-    INSERT INTO Users (userEmail, firstName, lastName, userType)
-    VALUES (?, ?, ?, ?)
-    `, [userEmail, firstName, lastName, userType])
-  
+      INSERT INTO Users (userEmail, firstName, lastName, userType, passwordHash)
+      VALUES (?, ?, ?, ?, ?)
+    `, [userEmail, firstName, lastName, userType, passwordHash])
+    
     // Return the newly created user with the auto-incremented ID
     const newUser = await getUser(result.insertId);
     return newUser;
