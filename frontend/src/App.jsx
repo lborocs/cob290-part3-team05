@@ -6,6 +6,8 @@ import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
 import NoPage from './pages/NoPage';
 import Login from './pages/Login';
+import Chats from './pages/Chats';
+
 
 
 
@@ -36,13 +38,15 @@ function App() {
 
   return (
     <>
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="*" element={<NoPage />} />
-      </Route>
-    </Routes>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="Chats" element={<Chats />} />
+          <Route path="*" element={<NoPage />} />
+
+        </Route>
+      </Routes>
     </>
   )
 }
