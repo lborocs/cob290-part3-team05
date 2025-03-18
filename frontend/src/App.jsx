@@ -44,7 +44,6 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="manager-analytics" element={<ManagerAnalytics />} />
         <Route path="*" element={<NoPage />} />
-        
       </Route>
     </Routes>
     </>
