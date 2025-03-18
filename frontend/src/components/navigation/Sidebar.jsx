@@ -27,7 +27,7 @@ export const Sidebar = () => {
 
   return (
     <>
-    <div className='flex flex-col bg-[var(--color-overlay)] items-center relative'>
+    <div className='flex flex-col bg-[var(--color-overlay)] items-center text-white font-bold relative'>
       <img
         src={logo}
         alt="Make-It-All Logo"
@@ -40,9 +40,9 @@ export const Sidebar = () => {
         {menuItems.map((item) => (
           <Link key={item.path} to={item.path}>
             <Button
-              className={`flex-col my-[3rem] items-center w-full mb-2 text-white${
+              className={`flex-col my-[3rem] items-center w-full max-w-[50px] max-h-[50px] mb-2${
                 location.pathname.startsWith(item.path)
-                  ? '' // Active page style
+                  ? 'bg-[var(--color-overlay-light)]' // Active page style
                   : '' // Inactive page style
               }`}
             >
@@ -54,21 +54,18 @@ export const Sidebar = () => {
         </div>
       </nav>
       <div className='mt-auto mb-[3rem] items-center justify-end'>
-        <TfiLayoutLineSolid className=' text-2xl w-full text-white'/>
+        <TfiLayoutLineSolid className=' text-2xl w-full'/>
         <Button
-          className={`flex my-[3rem] justify-center w-full mb-2 text-white`} onClick={signOut()}
+          className={`flex my-[3rem] justify-center w-full mb-2`} onClick={signOut()}
         >
-          <GoSignOut className='text-2xl text-white'/>
+          <GoSignOut className='text-2xl'/>
         </Button>
         <Button
-          className={`flex my-[3rem] justify-center w-full mb-2 text-white`} onClick={signOut()}
+          className={`flex my-[3rem] justify-center w-full mb-2`} onClick={signOut()}
         >
           Profile
         </Button>
-    
-
       </div>
-    
     </div>
     </>
   )
