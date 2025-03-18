@@ -42,7 +42,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="Chats" element={<Chats />} />
+          <Route path="chats" element={<Chats />} />
           <Route path="*" element={<NoPage />} />
 
         </Route>
