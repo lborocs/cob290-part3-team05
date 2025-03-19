@@ -104,7 +104,7 @@ const Login = () => {
   
 	//API Request
 	try {
-	  const response = await fetch("http://localhost:8080/login", {
+	  const response = await fetch("/api/login", {
 		method: "POST",
 		headers: {
 		  "Content-Type": "application/json",
