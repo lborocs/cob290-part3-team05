@@ -104,7 +104,7 @@ const Login = () => {
   
 	//API Request
 	try {
-	  const response = await fetch("/api/login/login", {
+	  const response = await fetch("http://localhost:8080/login", {
 		method: "POST",
 		headers: {
 		  "Content-Type": "application/json",
@@ -303,7 +303,7 @@ const Login = () => {
                       : "w-[100vw] lg:w-[40vw]"
                   } 
                   bg-[var(--color-subtitle)] rounded-[3rem] shadow-lg)
-                  max-w-[90vw] flex-grow mx-2 lg:my-[10vh] h-auto lg:min-h-[70vh] mx-[10%] lg:mx-[0]`}
+                  max-w-[90vw] flex-grow mx-2 lg:my-[10vh] h-auto lg:min-h-[70vh] lg:mx-[0]`}
         >
           {/* White box */}
           <div
