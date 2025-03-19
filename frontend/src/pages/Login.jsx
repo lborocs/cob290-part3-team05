@@ -81,64 +81,74 @@ const Login = () => {
   //=======================================================================================================================================================================================
 
   const login = async () => {
-	setLoginNameState(responseState.STANDARD);
-	setLoginPassState(responseState.STANDARD);
+    setLoginNameState(responseState.STANDARD);
+    setLoginPassState(responseState.STANDARD);
+    
+    // Presence check Email
+    if (!loginName) {
+      setLoginNameState(responseState.EMPTY);
+      return false;
+    }
+    
+    // Presence check Password
+    if (!loginPassword) {
+      setLoginPassState(responseState.EMPTY);
+      return false;
+    }
+    
+    // Create Form Structure
+    const loginData = {
+      email: loginName,
+      password: loginPassword,
+    };
+    
+    // API Request
+    try {
+      console.log("Sending login request with:", loginData);
+      
+      const response = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginData),
+      });
   
-	//Presence check Email
-	if (!loginName) {
-	  setLoginNameState(responseState.EMPTY);
-	  return false;
-	}
-  
-	//Presence check Password
-	if (!loginPassword) {
-	  setLoginPassState(responseState.EMPTY);
-	  return false;
-	}
-  
-	//Create Form Structure
-	const loginData = {
-	  email: loginName,
-	  password: loginPassword,
-	};
-  
-	//API Request
-	try {
-	  const response = await fetch("/api/login", {
-		method: "POST",
-		headers: {
-		  "Content-Type": "application/json",
-		},
-		body: JSON.stringify(loginData),
-	  });
-  
-	  const data = await response.json();
-  
-	  //Query outcomes
-	  if (data.success) {
-		// Store the token in localStorage for future API requests
-		localStorage.setItem('token', data.token);
-		localStorage.setItem('user', JSON.stringify(data.user));
-		
-		navigate("/"); // Go to dashboard page
-	  } else if (data.error) {
-		if (data.error === "Email not found") {
-		  setLoginNameState(responseState.INVALID);
-		} else if (data.error === "Email is Required") {
-		  setLoginNameState(responseState.EMPTY);
-		} else if (data.error === "Password is Required") {
-		  setLoginPassState(responseState.EMPTY);
-		} else if (data.error === "Invalid Credentials") {
-		  setLoginPassState(responseState.INVALID);
-		}
-	  } else {
-		throw new Error("Unexpected Failure, response from server is invalid");
-	  }
-	} catch (error) {
-	  console.error("Login error:", error);
-	  // Display a general error message to the user
-	  alert("An error occurred during login. Please try again later.");
-	}
+      const data = await response.json();
+      console.log("Response data:", data);
+      
+      if (response.ok) {
+        if (data.accessToken) {
+          // Store the token in localStorage for future API requests
+          localStorage.setItem('token', data.accessToken);
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+          
+          console.log("Login successful, navigating to dashboard");
+          navigate("/"); // Go to dashboard page
+        } else {
+          console.error("Missing accessToken in successful response");
+          alert("Login successful but session data is incomplete. Please try again.");
+        }
+      } else {
+        // Handle error responses
+        console.error("Login failed:", data.message || "Unknown error");
+        
+        if (response.status === 401) {
+          setLoginPassState(responseState.INVALID);
+        } else if (response.status === 400) {
+          if (data.message?.toLowerCase().includes("email")) {
+            setLoginNameState(responseState.INVALID);
+          } else {
+            setLoginPassState(responseState.INVALID);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("An error occurred during login. Please try again later.");
+    }
   };
 
   const validateEmail = (x, setState) => {

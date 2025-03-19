@@ -12,15 +12,16 @@ const app = express();
 dotenv.config({ path: "./.env" });
 
 // Define CORS options
+// From your backend/app.js
 const corsOptions = {
   origin: [
     "http://34.147.242.96",
     "http://localhost:3000",
     "http://localhost:5173",
-  ], // Add local development URLs
-  methods: ["GET", "POST", "PUT", "DELETE"], // Allow these HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
-  credentials: true, // This is important for cookies/authxw
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 };
 
 // Apply CORS middleware
