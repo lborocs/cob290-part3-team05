@@ -106,7 +106,7 @@ const Login = () => {
     try {
       console.log("Sending login request with:", loginData);
       
-      const response = await fetch("/api/login", {
+      const response = await fetch("/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
