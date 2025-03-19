@@ -36,14 +36,14 @@ function App() {
 
   return (
     <>
-    <Switch>
+    <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="chats" element={<Chats />} />
       </Route>
       <Route component={NoPage} />
-    </Switch>
+    </Routes>
     </>
   )
 }
