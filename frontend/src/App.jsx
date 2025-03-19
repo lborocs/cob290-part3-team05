@@ -41,8 +41,8 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="chats" element={<Chats />} />
-        <Route path="*" element={<NoPage />} />
       </Route>
+      <Route component={NoPage} />
     </Routes>
     </>
   )
