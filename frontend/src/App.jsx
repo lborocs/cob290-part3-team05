@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { Route, Routes } from 'react-router-dom'; // Import routing components
+import { Route, Routes, Switch } from 'react-router-dom'; // Import routing components
 
 import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
@@ -36,14 +36,14 @@ function App() {
 
   return (
     <>
-    <Routes>
+    <Switch>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="chats" element={<Chats />} />
       </Route>
       <Route component={NoPage} />
-    </Routes>
+    </Switch>
     </>
   )
 }
