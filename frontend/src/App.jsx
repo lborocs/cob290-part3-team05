@@ -6,6 +6,8 @@ import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
 import NoPage from './pages/NoPage';
 import Login from './pages/Login';
+import TeamLeader from './pages/Teamleader';
+
 
 
 
@@ -41,6 +43,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="*" element={<NoPage />} />
+        <Route path= "teamleader-analytics" element={<TeamLeader />}/>
       </Route>
     </Routes>
     </>
