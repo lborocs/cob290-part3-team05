@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { Route, Routes, Switch } from 'react-router-dom'; // Import routing components
+import { Route, Routes} from 'react-router-dom'; // Import routing components
 
 import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
