@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { Route, Routes } from 'react-router-dom'; // Import routing components
+import { Route, Routes} from 'react-router-dom'; // Import routing components
 
 import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard'
 import NoPage from './pages/NoPage';
 import Login from './pages/Login';
 import ManagerAnalytics from './pages/ManagerAnalytics';
-
-
+import Chats from './pages/Chats';
 
 
 function App() {
@@ -44,7 +43,9 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="manager-analytics" element={<ManagerAnalytics />} />
         <Route path="*" element={<NoPage />} />
+        <Route path="chats" element={<Chats />} />
       </Route>
+      <Route component={NoPage} />
     </Routes>
     </>
   )

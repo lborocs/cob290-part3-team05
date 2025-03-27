@@ -1,13 +1,10 @@
 @import "tailwindcss";
 
-
 @layer base {
   :root {
     --color-mint-500: oklch(0.72 0.11 178);
-    --color-base: #D9D9D9;
-    --color-overlay: #5A2777;
-    --color-overlay-dark: #451853;
-    --color-overlay-light: #963FB0;
+    --color-base: #FFFFFF;
+    --color-overlay: #1C2341;
     --color-title: #1C2341;
     --color-subtitle: #2E3944;
     --color-highlight: #124E66;
