@@ -1,0 +1,55 @@
+{
+    "directMessages": [
+      {
+        "id": 1,
+        "profilePicture": "/0.jpg",
+        "senderName": "Ron",
+        "time": "9:15 AM",
+        "lastMessage": "My pfp is better",
+        "isPinned": true
+      },
+      {
+        "id": 2,
+        "profilePicture": "/3.jpg",
+        "senderName": "Jason",
+        "time": "10:30 AM",
+        "lastMessage": "We need to start developing something for God's sake",
+        "isPinned": false
+      },
+      {
+        "id": 3,
+        "profilePicture": "/6.jpg",
+        "senderName": "Weenie",
+        "time": "Yesterday",
+        "lastMessage": "We need to find a way to sell water to a fish",
+        "isPinned": false
+      }
+    ],
+    "groupMessages": [
+      {
+        "id": 1,
+        "groupName": "Design Team",
+        "profilePicture": "/0.jpg",
+        "lastMessage": "Guys my pfp is designed better",
+        "time": "Today",
+        "isPinned": true
+      },
+      {
+        "id": 2,
+        "groupName": "Dev Team",
+        "profilePicture": "/6.jpg",
+        "lastMessage": "We need to start developing something",
+        "time": "Yesterday",
+        "isPinned": false
+      },
+      {
+        "id": 3,
+        "groupName": "Marketing Team",
+        "profilePicture": "/3.jpg",
+        "lastMessage": "If we fail to find a way to sell water to a fish, we are all getting sacked.",
+        "time": "2 Days Ago",
+        "isPinned": false
+      }
+    ]
+  }
+  

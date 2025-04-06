@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 
+import DirectMessagesList from "../components/global/DirectMessageList";
+import GroupMessagesList from "../components/global/GroupMessageList";
+
+
 // React icons
 import { FaPlus, FaPaperPlane, FaSearch, FaPencilAlt, FaEllipsisH } from "react-icons/fa";
 import { TiUserAdd } from "react-icons/ti";
@@ -7,17 +11,18 @@ import { TbLayoutSidebarRightCollapseFilled, TbLayoutSidebarLeftCollapseFilled }
 import { GoPaperclip } from "react-icons/go";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
 
-const Chats = () => {
+const Chats = ({ directMessages, groupMessages }) => {
     const [activeTab, setActiveTab] = useState("direct"); // Tracks active tab (Direct or Groups)
     const [searchTerm, setSearchTerm] = useState("");  // Search input state
     const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Controls sidebar visibility
     const [isNotificationsOn, setIsNotificationsOn] = useState(false); // Notifications toggle state
 
+    
     return (
         <div className="flex h-screen w-full">
 
             {/* Left Sidebar */}
-            <div className="w-[250px] flex-shrink-0 flex flex-col text-white p-4"
+            <div className=" flex-shrink-0 flex flex-col text-white p-4"
                 style={{ backgroundColor: "var(--color-overlay-light)" }}>
 
                 {/* Header */}
@@ -64,8 +69,13 @@ const Chats = () => {
 
                 {/* Chat List */}
                 <div className="mt-4 flex-1 overflow-y-auto space-y-3">
-
+                {activeTab === "direct" ? (
+                    <DirectMessagesList searchTerm={searchTerm} messages={directMessages} />
+                 ) : (
+                    <GroupMessagesList searchTerm={searchTerm} messages={groupMessages} />
+                    )}
                 </div>
+
 
                 {/* User Info Section */}
                 <div className="mt-4 flex items-center gap-3 p-3 border-t-[2px] border-white">

@@ -8,7 +8,7 @@ import NoPage from './pages/NoPage';
 import Login from './pages/Login';
 import Chats from './pages/Chats';
 
-
+import mockData from "../mockdb.json";
 
 
 function App() {
@@ -42,13 +42,12 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="chats" element={<Chats />} />
+          <Route path="chats" element={<Chats directMessages={mockData} />} />
           <Route path="*" element={<NoPage />} />
-
         </Route>
       </Routes>
     </>
-  )
+  );
 }
 /*
 const root = ReactDOM.createRoot(document.getElementById('root'));
