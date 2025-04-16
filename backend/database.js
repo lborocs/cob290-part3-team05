@@ -80,3 +80,35 @@ export async function createUser(
   const newUser = await getUser(result.insertId);
   return newUser;
 }
+
+// Project functions
+export async function getProjects() {
+  const [rows] = await pool.query(`
+    SELECT 
+      p.projectID as projectId,
+      p.projectName as projectTitle,
+      p.startDate,
+      p.dueDate,
+      CONCAT(u.firstName, ' ', u.lastName) as projectLeader,
+      p.projectStatus as status,
+      p.createdAt as creationDate,
+      p.completedAt as completionDate
+    FROM Projects p
+    LEFT JOIN Users u ON p.ownerID = u.userID
+    ORDER BY p.createdAt DESC
+  `);
+  return rows;
+}
+
+export async function getProjectData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT p.*, u.firstName, u.lastName
+    FROM projects p
+    LEFT JOIN users u ON p.ownerID = u.userID
+    WHERE p.projectID = ?
+  `,
+    [id]
+  );
+  return rows[0];
+}

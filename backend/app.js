@@ -24,6 +24,26 @@ const corsOptions = {
   credentials: true,
 };
 
+//Function to authenticate call this when you need to authenticate token
+function authenticateToken(req, res, next) {
+  //Get the token from the header
+  const authHeader = req.headers["authorization"];
+  //Split the token (BEARER TOKEN)
+  //Below just checks auth header exists first before splitting
+  const token = authHeader && authHeader.split(" ")[1];
+
+  //If token is null then return 401
+  if (token == null) return res.sendStatus(401);
+
+  //Verify the token
+  //If we see a token we will verify if it true.
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
@@ -47,25 +67,30 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
-//Function to authenticate call this when you need to authenticate token
-function authenticateToken(req, res, next) {
-  //Get the token from the header
-  const authHeader = req.headers["authorization"];
-  //Split the token (BEARER TOKEN)
-  //Below just checks auth header exists first before splitting
-  const token = authHeader && authHeader.split(" ")[1];
+// Add project endpoints
+app.get("/projects", authenticateToken, async (req, res) => {
+  try {
+    const projects = await getProjects();
+    res.send(projects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ message: "Server error while fetching projects" });
+  }
+});
 
-  //If token is null then return 401
-  if (token == null) return res.sendStatus(401);
-
-  //Verify the token
-  //If we see a token we will verify if it true.
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
+app.get("/projects/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const project = await getProjectData(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.send(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Server error while fetching project" });
+  }
+});
 
 app.post("/login", async (req, res) => {
   try {
