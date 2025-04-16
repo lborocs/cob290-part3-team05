@@ -9,62 +9,100 @@ import { LuChartNoAxesCombined } from "react-icons/lu";
 import { RxDashboard } from "react-icons/rx";
 import { TfiLayoutLineSolid } from "react-icons/tfi";
 import { GoSignOut } from "react-icons/go";
+import { FaRegUserCircle } from "react-icons/fa";
 
 import logo from '../../assets/img/make-it-all-icon.png';
 import Button from '../global/Button';
+import SidebarButton from './SidebarButton';
 
 export const Sidebar = () => {
 
   const menuItems = [
-    { name: 'Dashboard', path: '/', icon: <RxDashboard className='text-2xl'/> },
+    { name: 'Dashboard', path: '/', icon: <RxDashboard className='flex-none text-2xl'/> },
     { name: 'Chats', path: '/chats', icon: <PiChatsCircle className='flex-none text-2xl'/>},
     { name: 'Analytics', path: '/analytics', icon: <LuChartNoAxesCombined className='flex-none text-2xl'/>}
   ];
 
+  // Sidebar expansion useState
+  const [setExpanded, expanded] = useState(true)
+
+  // Location for button highlights
+  const location = useLocation();
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  // Sign out function
   const signOut = () => {
     console.log("sign out")
+  }
+
+  const userSettings = () => {
+    console.log("user settings")
   }
 
   return (
     <>
     <div className='flex flex-col bg-[var(--color-overlay)] items-center text-white font-bold relative'>
-      <img
-        src={logo}
-        alt="Make-It-All Logo"
-        className="flex-1 max-w-[50px] max-h-[50px] rounded-lg m-[1rem]"
-      />
+      <SidebarButton expanded={expanded} className='flex-row items-center w-full p-[.75rem] gap-x-[.5rem]'>
+        <img
+          src={logo}
+          alt="Make-It-All Logo"
+          className="max-w-[50px] max-h-[50px] rounded-lg"
+        />
+        Make-it-all
+      </SidebarButton>
 
       <nav>
-        <div className='mt-[3rem]'>
+        <div className='mt-[5rem]'>
         {/* map through menu items to create navigation buttons */}
-        {menuItems.map((item) => (
-          <Link key={item.path} to={item.path}>
-            <Button
-              className={`flex-col my-[3rem] items-center w-full max-w-[50px] max-h-[50px] mb-2${
-                location.pathname.startsWith(item.path)
-                  ? 'bg-[var(--color-overlay-light)]' // Active page style
-                  : '' // Inactive page style
-              }`}
-            >
-              {item.icon}
-              {item.name}
-            </Button>
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link key={item.path} to={item.path}>
+              <SidebarButton
+                expanded={expanded}
+                className={`flex-row my-[2rem] font-light items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
+                  active
+                    ? 'bg-[var(--color-overlay-light)]' // Active page style
+                    : '' // Inactive page style
+                }`}
+              >
+                {item.icon}
+                {item.name}
+              </SidebarButton>
+            </Link>
+          )
+        })}
         </div>
       </nav>
-      <div className='mt-auto mb-[3rem] items-center justify-end'>
-        <TfiLayoutLineSolid className=' text-2xl w-full'/>
-        <Button
-          className={`flex my-[3rem] justify-center w-full mb-2`} onClick={signOut()}
+
+      <div className='flex flex-col mt-auto mb-[3rem] items-center gap-[.5rem] justify-end'> 
+        {/* Sign Out Button */}
+        <SidebarButton
+          expanded={expanded}
+          className={`flex justify-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut()}
         >
-          <GoSignOut className='text-2xl'/>
-        </Button>
-        <Button
-          className={`flex my-[3rem] justify-center w-full mb-2`} onClick={signOut()}
+          <GoSignOut className='text-2xl stroke-[.05rem]'/>
+          <span className='font-extralight'>Sign Out</span>
+        </SidebarButton>
+
+        {/* Line Separator */}
+        <div className='mt-[1rem] w-20/21 h-0.25 bg-white'></div>
+
+        {/* User Profile Button */}
+        <SidebarButton
+          expanded={expanded}
+          className={`flex justify-center items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={userSettings()}
         >
-          Profile
-        </Button>
+          <FaRegUserCircle className='text-4xl'/> 
+          <div className='flex flex-col items-start'>
+            <span>Username</span>
+            <span className='font-extralight'>Role</span>
+          </div>
+        </SidebarButton>
+
       </div>
     </div>
     </>
