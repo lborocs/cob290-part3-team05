@@ -15,7 +15,7 @@ const ManagerAnalytics = () => {
         setIsLoading(true)
         
         // Get token from localStorage
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         const headers = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -33,8 +33,9 @@ const ManagerAnalytics = () => {
           return;
         }
         
-        //const projectsJson = await projectsResponse.json();
-        //setProjectsData(projectsJson);
+        const projectsJson = await projectsResponse.json();
+        console.log(projectsJson)
+        setProjectsData(projectsJson);
         
         // Fetch users data with authorization header
         const usersResponse = await fetch('/api/users', { 
@@ -61,7 +62,7 @@ const ManagerAnalytics = () => {
   }, []);
   
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-screen overflow-hidden">
       <div className="w-full">
         <ToggleView 
           activeView={activeView} 
@@ -74,11 +75,11 @@ const ManagerAnalytics = () => {
           <p className="text-lg">Loading data...</p>
         </div>
       ) : activeView === 'projects' ? (
-        <div className="w-full h-full flex-grow mt-20">
+        <div className="w-full flex-grow mt-20 overflow-auto">
           <ProjectsTable data={projectsData} />
         </div>
       ) : (
-        <div className="w-full h-full flex-grow mt-20">
+        <div className="w-full flex-grow mt-20 overflow-auto">
           <UsersTable data={usersData} />
         </div>
       )}

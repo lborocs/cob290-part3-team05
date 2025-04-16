@@ -83,20 +83,7 @@ export async function createUser(
 
 // Project functions
 export async function getProjects() {
-  const [rows] = await pool.query(`
-    SELECT 
-      p.projectID as projectId,
-      p.projectName as projectTitle,
-      p.startDate,
-      p.dueDate,
-      CONCAT(u.firstName, ' ', u.lastName) as projectLeader,
-      p.projectStatus as status,
-      p.createdAt as creationDate,
-      p.completedAt as completionDate
-    FROM Projects p
-    LEFT JOIN Users u ON p.ownerID = u.userID
-    ORDER BY p.createdAt DESC
-  `);
+  const [rows] = await pool.query("SELECT * FROM projects");
   return rows;
 }
 

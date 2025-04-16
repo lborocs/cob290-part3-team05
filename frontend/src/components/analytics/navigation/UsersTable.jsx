@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Get role color based on user type - for the new theme
+const getRoleColor = (userType) => {
+  switch(userType) {
+    case 'Manager':
+      return 'bg-purple-100 text-purple-800';
+    case 'Developer':
+      return 'bg-pink-100 text-pink-800';
+    case 'Admin':
+      return 'bg-indigo-100 text-indigo-800';
+    default:
+      return 'bg-purple-100 text-purple-800';
+  }
+};
+
 const UsersTable = ({ data }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,15 +33,15 @@ const UsersTable = ({ data }) => {
   };
   
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden">
-      <div className="p-4 border-b">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-purple-100">
+      <div className="p-5 border-b border-purple-100 bg-gradient-to-r from-purple-50 to-pink-50">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-800">Users Overview</h2>
+          <h2 className="text-xl font-semibold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">Users Overview</h2>
           <div className="relative">
             <input
               type="text"
               placeholder="Search users..."
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white placeholder-purple-300"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -36,40 +50,42 @@ const UsersTable = ({ data }) => {
       </div>
       
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-purple-100">
+          <thead className="bg-gradient-to-r from-purple-50 to-pink-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Role</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-purple-50">
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <tr 
-                  key={user.userID}
-                  onClick={() => handleUserClick(user.userID)}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.userID}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.userEmail}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.userType === 'Manager' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {user.userType}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              filteredUsers.map((user) => {
+                const roleColor = getRoleColor(user.userType);
+                
+                return (
+                  <tr 
+                    key={user.userID}
+                    onClick={() => handleUserClick(user.userID)}
+                    className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 cursor-pointer transition-colors duration-200"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.userID}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-800">{user.firstName} {user.lastName}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{user.userEmail}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${roleColor}`}>
+                        {user.userType}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan="4" className="px-6 py-4 text-center text-sm text-purple-500">
                   No users found matching your search.
                 </td>
               </tr>
@@ -78,8 +94,8 @@ const UsersTable = ({ data }) => {
         </table>
       </div>
       
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6">
-        <div className="text-sm text-gray-700">
+      <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-t border-purple-100">
+        <div className="text-sm text-purple-700">
           Showing <span className="font-medium">{filteredUsers.length}</span> users
         </div>
       </div>

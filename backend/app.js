@@ -2,7 +2,13 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getUsers, getUser, createUser, getUserByEmail } from "./database.js";
+import {
+  getUsers,
+  getUser,
+  createUser,
+  getUserByEmail,
+  getProjects,
+} from "./database.js";
 //import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";
 
@@ -50,7 +56,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Protected routes
-app.get("/users", async (req, res) => {
+app.get("/users", authenticateToken, async (req, res) => {
   const users = await getUsers();
   res.send(users);
 });
