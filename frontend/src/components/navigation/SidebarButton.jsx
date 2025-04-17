@@ -7,16 +7,16 @@ const SidebarButton = ({ className = '', expanded, onClick, children }) => {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 p-4 transition-all duration-300 ${className}`}
+      className={`flex items-center gap-2 p-4 ${className}`}
     >
-      <span className="text-2xl">{icon}</span>   
-      <span
-        className={`whitespace-nowrap overflow-hidden transition-all duration-300 
-        ${expanded ? 'opacity-100 max-w-[200px] ml-2 scale-100' : 'opacity-0 max-w-0 scale-95 ml-0'}
+      {icon}
+      <div
+        className={`flex justify-between items-center whitespace-nowrap overflow-hidden transition-all duration-300
+        ${expanded ? 'opacity-100 max-w-[200px] w-full ml-2' : 'opacity-0 max-w-0 w-0 ml-0'}
         `}
       >
         {label}
-      </span>
+      </div>
     </button>
   );
 };
