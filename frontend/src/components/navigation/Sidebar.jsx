@@ -68,7 +68,7 @@ export const Sidebar = () => {
       </SidebarButton>
 
 
-      <button className='rounded-full h-[2rem] w-[2rem] bg-[var(--color-expand-btn)] p-[.5rem] hover:bg-amber-300 ' onClick={toggleExpand}>
+      <button className='rounded-full h-[2rem] w-[2rem] bg-[var(--color-expand-btn)] p-[.5rem] hover:bg-amber-300 hover:font-bold ' onClick={toggleExpand}>
         <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
       </button>
 
@@ -83,7 +83,7 @@ export const Sidebar = () => {
                 expanded={expanded}
                 className={`my-[2rem] font-light items-center w-full gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
                   active
-                    ? 'bg-[var(--color-overlay-light)]' // Active page style
+                    ? "font-bold bg-[var(--color-overlay-light)]" // Active page style
                     : '' // Inactive page style
                 }`}
               >
