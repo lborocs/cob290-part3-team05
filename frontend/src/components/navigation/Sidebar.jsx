@@ -12,7 +12,6 @@ import { FaRegUserCircle } from "react-icons/fa";
 import { FaArrowRight } from "react-icons/fa6";
 
 import logo from '../../assets/img/make-it-all-icon.png';
-import Button from '../global/Button';
 import SidebarButton from './SidebarButton';
 
 export const Sidebar = () => {
@@ -46,19 +45,20 @@ export const Sidebar = () => {
   return (
     <>
     <div className='flex flex-col bg-[var(--color-overlay)] items-center text-white font-bold relative'>
-      <div className='flex items-center mr-[.5rem]'>
-        <SidebarButton expanded={expanded} className='flex-row items-center w-full p-[.75rem] gap-x-[.5rem]'>
-          <img
-            src={logo}
-            alt="Make-It-All Logo"
-            className="max-w-[50px] max-h-[50px] rounded-lg"
-          />
-          Make-it-all
-        </SidebarButton>
-        <button className='rounded-full h-[2rem] w-[2rem] bg-[var(--color-expand-btn)] p-[.5rem] hover:bg-amber-300 ' onClick={toggleExpand}>
-          <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
-        </button>
-      </div>
+      <SidebarButton expanded={expanded} className='flex-row items-center w-full p-[.75rem] gap-x-[.5rem]'>
+        <img
+          src={logo}
+          alt="Make-It-All Logo"
+          className="max-w-[50px] max-h-[50px] rounded-lg"
+        />
+        Make-it-all
+      </SidebarButton>
+
+
+      <button className='rounded-full h-[2rem] w-[2rem] bg-[var(--color-expand-btn)] p-[.5rem] hover:bg-amber-300 ' onClick={toggleExpand}>
+        <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+      </button>
+
       <nav>
         <div className='mt-[5rem]'>
         {/* map through menu items to create navigation buttons */}
