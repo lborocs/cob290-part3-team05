@@ -1,38 +1,24 @@
 import React from 'react'
 
-const SidebarButtonExpanded = ({className="",...props}) => {
-    return (
-        <>
-        <button className= {`flex ${className}`} onClick={props.onClick}>
-            {props.icon}
-            {props.label}
-        </button>
-        </>
-    )
-}
+const SidebarButton = ({ className = '', expanded, onClick, children }) => {
+  const childrenArray = React.Children.toArray(children);
+  const [icon, label] = childrenArray;
 
-const SidebarButtonMinimised = ({className="",...props}) => {
-    return (
-        <>
-        <button className= {`flex ${className}`} onClick={props.onClick}>
-            {props.icon}
-        </button> 
-        </>
-    )
-}
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-2 transition-all duration-300 ${className}`}
+    >
+      <span className="text-2xl">{icon}</span>
+      
+      <span
+        className={`whitespace-nowrap overflow-hidden transition-all duration-300 
+        ${expanded ? 'opacity-100 max-w-[200px] ml-2 scale-100' : 'opacity-0 max-w-0 scale-95 ml-0'}`}
+      >
+        {label}
+      </span>
+    </button>
+  );
+};
 
-const SidebarButton = ({className="",...props}) => {
-    
-    const childrenArray = React.Children.toArray(props.children)
-    const [icon,label] = childrenArray
-
-    return (
-        <>
-        {!props.expanded 
-        ? <SidebarButtonMinimised icon={icon} className={`flex ${className}`} onClick={props.onClick}/> 
-        : <SidebarButtonExpanded icon={icon} label={label} className={`flex ${className}`} onClick={props.onClick}/>}
-        </>
-    )
-}
-
-export default SidebarButton
+export default SidebarButton;

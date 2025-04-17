@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { PiChatsCircle } from "react-icons/pi";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 import { RxDashboard } from "react-icons/rx";
-import { TfiLayoutLineSolid } from "react-icons/tfi";
 import { GoSignOut } from "react-icons/go";
 import { FaRegUserCircle } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa6";
 
 import logo from '../../assets/img/make-it-all-icon.png';
 import Button from '../global/Button';
@@ -24,7 +24,8 @@ export const Sidebar = () => {
   ];
 
   // Sidebar expansion useState
-  const [setExpanded, expanded] = useState(true)
+  const [expanded, setExpanded] = useState(true)
+  const toggleExpand = () => setExpanded(prev => !prev);
 
   // Location for button highlights
   const location = useLocation();
@@ -54,6 +55,10 @@ export const Sidebar = () => {
         Make-it-all
       </SidebarButton>
 
+      <button className='flex rounded-full bg-amber-300 p-[.5rem]' onClick={toggleExpand}>
+        <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+      </button>
+
       <nav>
         <div className='mt-[5rem]'>
         {/* map through menu items to create navigation buttons */}
@@ -82,7 +87,7 @@ export const Sidebar = () => {
         {/* Sign Out Button */}
         <SidebarButton
           expanded={expanded}
-          className={`flex justify-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut()}
+          className={`flex justify-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut}
         >
           <GoSignOut className='text-2xl stroke-[.05rem]'/>
           <span className='font-extralight'>Sign Out</span>
@@ -94,7 +99,7 @@ export const Sidebar = () => {
         {/* User Profile Button */}
         <SidebarButton
           expanded={expanded}
-          className={`flex justify-center items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={userSettings()}
+          className={`flex justify-center items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={userSettings}
         >
           <FaRegUserCircle className='text-4xl'/> 
           <div className='flex flex-col items-start'>
