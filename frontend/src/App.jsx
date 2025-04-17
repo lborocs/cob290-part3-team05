@@ -8,9 +8,6 @@ import NoPage from './pages/NoPage';
 import Login from './pages/Login';
 import Chats from './pages/Chats';
 
-
-
-
 function App() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +41,6 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="chats" element={<Chats />} />
           <Route path="*" element={<NoPage />} />
-
         </Route>
       </Routes>
     </>
