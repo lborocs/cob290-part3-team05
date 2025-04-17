@@ -46,29 +46,29 @@ export const Sidebar = () => {
   return (
     <>
     <div className='flex flex-col bg-[var(--color-overlay)] items-center text-white font-bold relative'>
-      <SidebarButton expanded={expanded} className='flex-row items-center w-full p-[.75rem] gap-x-[.5rem]'>
-        <img
-          src={logo}
-          alt="Make-It-All Logo"
-          className="max-w-[50px] max-h-[50px] rounded-lg"
-        />
-        Make-it-all
-      </SidebarButton>
-
-      <button className='flex rounded-full bg-amber-300 p-[.5rem]' onClick={toggleExpand}>
-        <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
-      </button>
-
+      <div className='flex items-center mr-[.5rem]'>
+        <SidebarButton expanded={expanded} className='flex-row items-center w-full p-[.75rem] gap-x-[.5rem]'>
+          <img
+            src={logo}
+            alt="Make-It-All Logo"
+            className="max-w-[50px] max-h-[50px] rounded-lg"
+          />
+          Make-it-all
+        </SidebarButton>
+        <button className='rounded-full h-[2rem] w-[2rem] bg-[var(--color-expand-btn)] p-[.5rem] hover:bg-amber-300 ' onClick={toggleExpand}>
+          <FaArrowRight className={`size-[1rem] transition-transform duration-500 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+        </button>
+      </div>
       <nav>
         <div className='mt-[5rem]'>
         {/* map through menu items to create navigation buttons */}
         {menuItems.map((item) => {
           const active = isActive(item.path);
           return (
-            <Link key={item.path} to={item.path}>
+            <Link key={item.path} to={item.path} className='justify-items-center'>
               <SidebarButton
                 expanded={expanded}
-                className={`flex-row my-[2rem] font-light items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
+                className={`flex-row my-[2rem] font-light items-center w-full gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
                   active
                     ? 'bg-[var(--color-overlay-light)]' // Active page style
                     : '' // Inactive page style
@@ -89,7 +89,7 @@ export const Sidebar = () => {
           expanded={expanded}
           className={`flex justify-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut}
         >
-          <GoSignOut className='text-2xl stroke-[.05rem]'/>
+          <GoSignOut className='text-2xl stroke-[.07rem]'/>
           <span className='font-extralight'>Sign Out</span>
         </SidebarButton>
 
