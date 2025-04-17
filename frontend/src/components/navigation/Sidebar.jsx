@@ -14,8 +14,20 @@ import { FaArrowRight } from "react-icons/fa6";
 import logo from '../../assets/img/make-it-all-icon.png';
 import SidebarButton from './SidebarButton';
 
+const ProfileIcon = ({ user }) => {
+  const name = user.name
+  const [first,last] = name.split(" ")
+  return (
+    <div className="inline-flex items-center justify-center rounded-full bg-amber-500 text-[var(--color-overlay)] font-bold text-lg aspect-square min-w-[2.5rem] px-2">
+      {first[0]}
+      {last[0]}
+    </div>
+  );
+}
+
 export const Sidebar = () => {
 
+  const user = { name: "Stephen Leong"}
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: <RxDashboard className='flex-none text-2xl'/> },
     { name: 'Chats', path: '/chats', icon: <PiChatsCircle className='flex-none text-2xl'/>},
@@ -38,6 +50,7 @@ export const Sidebar = () => {
     console.log("sign out")
   }
 
+  // User profile settings
   const userSettings = () => {
     console.log("user settings")
   }
@@ -68,13 +81,13 @@ export const Sidebar = () => {
             <Link key={item.path} to={item.path} className='justify-items-center'>
               <SidebarButton
                 expanded={expanded}
-                className={`flex-row my-[2rem] font-light items-center w-full gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
+                className={`my-[2rem] font-light items-center w-full gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg ${
                   active
                     ? 'bg-[var(--color-overlay-light)]' // Active page style
                     : '' // Inactive page style
                 }`}
               >
-                {item.icon}
+                <div className="text-2xl">{item.icon}</div>
                 {item.name}
               </SidebarButton>
             </Link>
@@ -82,14 +95,15 @@ export const Sidebar = () => {
         })}
         </div>
       </nav>
+      
 
       <div className='flex flex-col mt-auto mb-[3rem] items-center gap-[.5rem] justify-end'> 
         {/* Sign Out Button */}
         <SidebarButton
           expanded={expanded}
-          className={`flex justify-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut}
+          className={`w-full hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={signOut}
         >
-          <GoSignOut className='text-2xl stroke-[.07rem]'/>
+          <GoSignOut className='text-3xl stroke-[.07rem]'/>
           <span className='font-extralight'>Sign Out</span>
         </SidebarButton>
 
@@ -99,9 +113,9 @@ export const Sidebar = () => {
         {/* User Profile Button */}
         <SidebarButton
           expanded={expanded}
-          className={`flex justify-center items-center w-full p-[.5rem] gap-[.5rem] hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={userSettings}
+          className={`w-full hover:bg-[var(--color-overlay-dark)] rounded-lg`} onClick={userSettings}
         >
-          <FaRegUserCircle className='text-4xl'/> 
+          <ProfileIcon user={user}/>
           <div className='flex flex-col items-start'>
             <span>Username</span>
             <span className='font-extralight'>Role</span>
