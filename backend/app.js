@@ -29,6 +29,20 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// Middleware to check for internal request header
+function checkInternalRequest(req, res, next) {
+  const internalRequest = req.get("X-Internal-Request");
+  
+  if (internalRequest !== "true") {
+    return res.status(403).json({ message: "Forbidden: Internal request required" });
+  }
+
+  next();
+}
+
+// Apply internal request check for protected routes
+app.use("/users", checkInternalRequest);
+
 // Protected routes
 app.get("/users", async (req, res) => {
   const users = await getUsers();
