@@ -31,10 +31,12 @@ app.use(express.json());
 
 // Preventing external access
 app.use((req, res, next) => {
-  const allowedHosts = ["localhost", "127.0.0.1"];
-  const host = req.hostname;
+  const allowedIPs = ["::1", "127.0.0.1"]; // "::1" is IPv6 localhost
 
-  if (!allowedHosts.includes(host)) {
+  // Trust proxy headers if coming via Apache
+  const ip = req.connection.remoteAddress || req.ip;
+
+  if (!allowedIPs.includes(ip)) {
     return res.status(403).send("Forbidden");
   }
 
