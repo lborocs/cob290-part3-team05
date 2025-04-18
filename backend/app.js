@@ -128,7 +128,8 @@ app.use((err, req, res, next) => {
   if (!allowedHosts.includes(host)) {
     return res.status(403).send('Forbidden');
   }
-  
+
+  next();
 });
 
 app.listen(8080, "127.0.0.1", () => {
