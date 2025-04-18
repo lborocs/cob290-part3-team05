@@ -123,6 +123,6 @@ app.use((err, req, res, next) => {
   res.status(500).send("Server Error");
 });
 
-app.listen(8080, "0.0.0.0", () => {
+app.listen(8080, "127.0.0.1", () => {
   console.log("Server is running on port 8080");
 });
