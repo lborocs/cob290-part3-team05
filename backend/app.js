@@ -28,15 +28,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+app.set("trust proxy", true);
 
 // Preventing external access
 app.use((req, res, next) => {
   const allowedIPs = ["::1", "127.0.0.1"]; // "::1" is IPv6 localhost
 
-  // Trust proxy headers if coming via Apache
-  const ip = req.connection.remoteAddress || req.ip;
-
-  if (!allowedIPs.includes(ip)) {
+  if (!allowedIPs.includes(req.ip)) {
     return res.status(403).send("Forbidden");
   }
 
