@@ -28,18 +28,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
-app.set("trust proxy", true);
-
-// Preventing external access
-app.use((req, res, next) => {
-  const allowedIPs = ["::1", "127.0.0.1"]; // "::1" is IPv6 localhost
-
-  if (!allowedIPs.includes(req.ip)) {
-    return res.status(403).send("Forbidden");
-  }
-
-  next();
-});
 
 // Protected routes
 app.get("/users", async (req, res) => {
