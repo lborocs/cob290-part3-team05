@@ -121,6 +121,14 @@ app.post("/login", async (req, res) => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send("Server Error");
+
+  const allowedHosts = ['localhost', '127.0.0.1'];
+  const host = req.hostname;
+
+  if (!allowedHosts.includes(host)) {
+    return res.status(403).send('Forbidden');
+  }
+  
 });
 
 app.listen(8080, "127.0.0.1", () => {
