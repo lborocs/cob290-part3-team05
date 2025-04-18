@@ -9,7 +9,11 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchUsers = async () => {
           try {
-            const response = await fetch('/api/users');
+            const response = await fetch('/api/users', {
+                headers: {
+                    'X-Internal-Request': 'true',  // Add this header to identify internal requests
+                },
+            });
             if (!response.ok) {
               throw new Error('Failed to fetch data');
             }
