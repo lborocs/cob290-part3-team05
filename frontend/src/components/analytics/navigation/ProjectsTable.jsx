@@ -9,19 +9,21 @@ const getProjectStatus = (project) => {
   return project.status || 'Active';
 };
 
-// Get status color based on status - updated for new theme
+// Get status color based on status - updated for color scheme
 const getStatusColor = (status) => {
   switch(status) {
     case 'Completed':
-      return 'bg-indigo-100 text-indigo-800';
+      return 'bg-[var(--color-status-green-light)] text-[var(--color-status-green)]';
     case 'Active':
-      return 'bg-green-100 text-green-800';
+      return 'bg-[var(--color-status-blue-light)] text-[var(--color-status-blue)]';
     case 'On Hold':
-      return 'bg-amber-100 text-amber-800';
+      return 'bg-[var(--color-status-amber-light)] text-[var(--color-status-amber)]';
     case 'Cancelled':
-      return 'bg-pink-100 text-pink-800';
+      return 'bg-[var(--color-status-red-light)] text-[var(--color-status-red)]';
+    case 'At Risk':
+      return 'bg-[var(--color-status-red-light)] text-[var(--color-status-red)]';
     default:
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-[var(--color-status-gray-light)] text-[var(--color-subtitle)]';
   }
 };
 
@@ -51,15 +53,15 @@ const ProjectsTable = ({ data }) => {
   };
   
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-purple-100">
-      <div className="p-5 border-b border-purple-100 bg-gradient-to-r from-purple-50 to-pink-50">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+      <div className="p-5 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">Projects Overview</h2>
+          <h2 className="text-xl font-semibold text-[#1C2341]">Projects Overview</h2>
           <div className="relative">
             <input
               type="text"
               placeholder="Search projects..."
-              className="px-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white placeholder-purple-300"
+              className="px-4 py-2 border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A2777] bg-white placeholder-[#2E3944]/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -68,17 +70,17 @@ const ProjectsTable = ({ data }) => {
       </div>
       
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-purple-100">
-          <thead className="bg-gradient-to-r from-purple-50 to-pink-50">
+        <table className="min-w-full divide-y divide-[#D9D9D9]">
+          <thead className="bg-[#E8C2F4]/20">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Project</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Timeline</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Leader</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-purple-700 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Project</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Leader</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Status</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-purple-50">
+          <tbody className="bg-white divide-y divide-[#D9D9D9]">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => {
                 const status = getProjectStatus(project);
@@ -88,23 +90,23 @@ const ProjectsTable = ({ data }) => {
                   <tr 
                     key={project.projectId}
                     onClick={() => handleProjectClick(project.projectId)}
-                    className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 cursor-pointer transition-colors duration-200"
+                    className="hover:bg-[#E8C2F4]/10 cursor-pointer transition-colors duration-200"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{project.projectId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#2E3944]">{project.projectId}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-800">{project.projectTitle}</div>
+                      <div className="text-sm font-medium text-[#1C2341]">{project.projectTitle}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-[#2E3944]">
                         {formatDate(project.startDate)} - {formatDate(project.dueDate)}
                         {project.completionDate && project.completionDate !== 'NULL' && (
-                          <div className="text-xs text-purple-500 mt-1">
+                          <div className="text-xs text-[#5A2777] mt-1">
                             Completed: {formatDate(project.completionDate)}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[#2E3944]">
                       {project.projectLeader}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -117,7 +119,7 @@ const ProjectsTable = ({ data }) => {
               })
             ) : (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-sm text-purple-500">
+                <td colSpan="5" className="px-6 py-4 text-center text-sm text-[#5A2777]">
                   No projects found matching your search.
                 </td>
               </tr>
@@ -126,8 +128,8 @@ const ProjectsTable = ({ data }) => {
         </table>
       </div>
       
-      <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-t border-purple-100">
-        <div className="text-sm text-purple-700">
+      <div className="px-6 py-4 bg-[#E8C2F4]/20 border-t border-[#D9D9D9]">
+        <div className="text-sm text-[#5A2777]">
           Showing <span className="font-medium">{filteredProjects.length}</span> projects
         </div>
       </div>
