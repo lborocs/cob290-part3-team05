@@ -62,7 +62,7 @@ const ManagerAnalytics = () => {
   }, []);
   
   return (
-    <div className="flex flex-col w-full h-screen overflow-hidden">
+    <div className="flex flex-col w-full h-screen overflow-hidden bg-gradient-to-r from-purple-50 to-pink-50">
       <div className="w-full">
         <ToggleView 
           activeView={activeView} 
