@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./App.css";
-import { Route, Routes } from "react-router-dom"; // Import routing components
+import { Route, Routes, Navigate } from "react-router-dom"; // Import routing components
 import { jwtDecode } from "jwt-decode";
 
 import Layout from "./pages/Layout";
