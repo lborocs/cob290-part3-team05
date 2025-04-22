@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
 // React icons
@@ -26,17 +26,37 @@ const Chats = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
+  const socket = useRef(null);
+
   useEffect(() => {
-    socket.on("chat message", (msg) => {
+    socket.current = io("http://127.0.0.1:8080", {
+      auth: {
+        token: localStorage.getItem("accessToken"),
+      },
+    });
+
+    socket.current.on("new_message", (msg) => {
+      console.log("New message received:", msg);
       setMessages((prev) => [...prev, msg]);
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.current.disconnect();
+    };
   }, []);
 
   const sendMessage = (e) => {
     e.preventDefault();
-    socket.emit("chat message", input);
+    if (!input.trim()) return;
+
+    // Replace with actual selected chat ID if applicable
+    const chatID = 1;
+
+    socket.current.emit("send_message", {
+      chatID,
+      messageText: input.trim(),
+    });
+
     setInput("");
   };
 
@@ -140,7 +160,9 @@ const Chats = () => {
         <div className="flex-1 p-4 space-y-3 overflow-y-auto">
           <ul>
             {messages.map((msg, idx) => (
-              <li key={idx}>{msg}</li>
+              <li key={idx} className="bg-white px-4 py-2 rounded-md shadow-sm">
+                <strong>{msg.firstName}:</strong> {msg.messageText}
+              </li>
             ))}
           </ul>
         </div>

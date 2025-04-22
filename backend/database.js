@@ -81,3 +81,33 @@ export async function createUser(
   const newUser = await getUser(result.insertId);
   return newUser;
 }
+
+// Chat SQL Queries
+
+export async function insertMessage(chatID, senderUserID, messageText) {
+  const result = await db.run(
+    "INSERT INTO Messages (chatID, senderUserID, messageText) VALUES (?, ?, ?)",
+    [chatID, senderUserID, messageText]
+  );
+  return result.lastID; // or result.insertId
+}
+
+export async function getMessageWithSenderInfo(messageID) {
+  const message = await db.get(`
+    SELECT 
+      m.messageID, m.chatID, m.messageText, m.senderUserID, m.createdAt,
+      u.firstName, u.lastName, u.userEmail
+    FROM Messages m
+    JOIN Users u ON m.senderUserID = u.userID
+    WHERE m.messageID = ?
+  `, [messageID]);
+
+  return message;
+}
+
+export async function getUserChatIDs(userID) {
+  const rows = await db.all(`
+    SELECT chatID FROM ChatUsers WHERE userID = ?
+  `, [userID]);
+  return rows.map(row => row.chatID);
+}
