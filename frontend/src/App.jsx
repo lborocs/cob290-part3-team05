@@ -14,7 +14,7 @@ const isTokenValid = () => {
   if (!token) return false;
 
   try {
-    const decoded = jwt_decode(token); // Using the default import
+    const decodedToken = jwt_decode(token);
     return decoded.exp * 1000 > Date.now(); // Check if token is expired
   } catch (e) {
     return false;
