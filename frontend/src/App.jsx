@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import { Route, Routes } from "react-router-dom"; // Import routing components
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 import Layout from "./pages/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -14,7 +14,7 @@ const isTokenValid = () => {
   if (!token) return false;
 
   try {
-    const decodedToken = jwt_decode(token);
+    const decodedToken = jwtDecode(token);
     return decoded.exp * 1000 > Date.now(); // Check if token is expired
   } catch (e) {
     return false;
