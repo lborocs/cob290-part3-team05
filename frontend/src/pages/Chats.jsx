@@ -169,8 +169,8 @@ const Chats = () => {
 
         {/* Message Input */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[600px] sm:w-[95%]">
-          <div className="flex items-center w-full bg-white bg-opacity-90 backdrop-blur-md rounded-full px-4 py-1.5 shadow-lg">
-            <form onSubmit={sendMessage}>
+          <form onSubmit={sendMessage}>
+            <div className="flex items-center w-full bg-white bg-opacity-90 backdrop-blur-md rounded-full px-4 py-1.5 shadow-lg">
               <button className="text-[var(--color-overlay-dark)] text-xl flex-shrink-0">
                 <GoPaperclip />
               </button>
@@ -191,8 +191,8 @@ const Chats = () => {
               >
                 <FaPaperPlane className="w-4 h-4" />
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
 

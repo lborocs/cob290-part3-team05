@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 import { FaEye, FaCircleInfo } from "react-icons/fa6";
 import { ImCross } from "react-icons/im";
 import logo from "../assets/img/make-it-all-icon.png";
@@ -83,29 +85,29 @@ const Login = () => {
   const login = async () => {
     setLoginNameState(responseState.STANDARD);
     setLoginPassState(responseState.STANDARD);
-    
+
     // Presence check Email
     if (!loginName) {
       setLoginNameState(responseState.EMPTY);
       return false;
     }
-    
+
     // Presence check Password
     if (!loginPassword) {
       setLoginPassState(responseState.EMPTY);
       return false;
     }
-    
+
     // Create Form Structure
     const loginData = {
       email: loginName,
       password: loginPassword,
     };
-    
+
     // API Request
     try {
       console.log("Sending login request with:", loginData);
-      
+
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
@@ -113,28 +115,30 @@ const Login = () => {
         },
         body: JSON.stringify(loginData),
       });
-  
+
       const data = await response.json();
       console.log("Response data:", data);
-      
+
       if (response.ok) {
         if (data.accessToken) {
           // Store the token in localStorage for future API requests
-          localStorage.setItem('token', data.accessToken);
+          localStorage.setItem("token", data.accessToken);
           if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem("user", JSON.stringify(data.user));
           }
-          
+
           console.log("Login successful, navigating to dashboard");
           navigate("/"); // Go to dashboard page
         } else {
           console.error("Missing accessToken in successful response");
-          alert("Login successful but session data is incomplete. Please try again.");
+          alert(
+            "Login successful but session data is incomplete. Please try again."
+          );
         }
       } else {
         // Handle error responses
         console.error("Login failed:", data.message || "Unknown error");
-        
+
         if (response.status === 401) {
           setLoginPassState(responseState.INVALID);
         } else if (response.status === 400) {
