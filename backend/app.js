@@ -137,6 +137,38 @@ app.use((err, req, res, next) => {
   res.status(500).send("Server Error");
 });
 
-app.listen(8080, "127.0.0.1", () => {
-  console.log("Server is running on port 8080");
+// Websocket set up
+
+import http from "http";
+import { Server } from "socket.io";
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://34.147.242.96"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+
+  socket.on("chat message", (msg) => {
+    console.log("Received:", msg);
+    io.emit("chat message", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
+
+server.listen(8080, "127.0.0.1", () => {
+  console.log("Server (HTTP + WebSocket) running on port 8080");
 });
