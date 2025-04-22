@@ -28,12 +28,12 @@ npm run build
 
 # Check if dist folder is generated
 echo "Checking if dist folder is generated..."
-ls -l $BUILD_DIR
+sudo ls -l $BUILD_DIR
 
 # Back up phpMyAdmin if it exists, and then proceed with deployment
 if [ -d "/var/www/html/phpmyadmin" ]; then
     echo "Backing up phpMyAdmin..."
-    cp -r /var/www/html/phpmyadmin /home/ubuntu/phpmyadmin_backup
+    sudo cp -r /var/www/html/phpmyadmin /home/ubuntu/phpmyadmin_backup
 fi
 
 # Clear old frontend build in target directory
@@ -43,9 +43,9 @@ sudo rm -rf $TARGET_DIR/*
 # Restore phpMyAdmin
 if [ -d "/home/ubuntu/phpmyadmin_backup" ]; then
     echo "Restoring phpMyAdmin..."
-    cp -r /home/ubuntu/phpmyadmin_backup /var/www/html/
+    sudo cp -r /home/ubuntu/phpmyadmin_backup /var/www/html/
     echo "Rename backup to phpmyadmin"
-    mv /var/www/html/phpmyadmin_backup /var/www/html/phpmyadmin
+    sudo mv /var/www/html/phpmyadmin_backup /var/www/html/phpmyadmin
 fi
 
 # Copy new build to target directory
