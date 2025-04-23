@@ -82,6 +82,10 @@ function authenticateToken(req, res, next) {
 }
 
 app.post("/login", async (req, res) => {
+  const plainPassword = "123456";
+  const hashed = "$2y$10$yhQzxNOYkqokZuBGlFve8OHd.XhflqHInV5DYiFiX62PNeK1dVIYm"; // replace with your hash
+
+  bcrypt.compare(plainPassword, hashed).then(console.log).catch(console.error);
   try {
     // Get email and password from request body
     const { email, password } = req.body;
@@ -128,6 +132,7 @@ app.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    console.error("Stack trace:", error.stack);
     res.status(500).json({ message: "Server error during login" });
   }
 });
