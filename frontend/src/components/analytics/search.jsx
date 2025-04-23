@@ -9,6 +9,11 @@ const Search = () => {
             <div>
                 <MagnifyingGlassIcon className="w-6 h-6 -ml-15 text-gray-500 hover:text-teal-600" />
             </div>
+            <input
+              type="text"
+              placeholder="Type Something..."
+              className="w-full h-full bg-transparent outline-none text-gray-700 pl-4 pr-4 translate-y-[-33px]"
+            />
         </div>
     </> 
   )
