@@ -30,7 +30,14 @@ function App() {
     <>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="chats" element={<Chats />} />
           <Route path="*" element={<NoPage />} />
