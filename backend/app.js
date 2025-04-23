@@ -167,34 +167,34 @@ io.use((socket, next) => {
   });
 });
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("User connected:", socket.user.email);
+  try {
+    const chatIDs = await getUserChatIDs(socket.user.id);
+    chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
 
-  // Join chat rooms based on user’s chat memberships
-  // Assume you have a function like: getUserChatIDs(userID)
-  const chatIDs = await getUserChatIDs(socket.user.id);
-  chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
+    // Listen for incoming messages
+    socket.on("send_message", async ({ chatID, messageText }) => {
+      try {
+        // Save to DB
+        const messageID = await insertMessage(chatID, socket.user.id, messageText);
 
-  // Listen for incoming messages
-  socket.on("send_message", async ({ chatID, messageText }) => {
-    try {
-      // Save to DB
-      const messageID = await insertMessage(chatID, socket.user.id, messageText);
+        // Get full message with sender info
+        const fullMessage = await getMessageWithSenderInfo(messageID);
 
-      // Get full message with sender info
-      const fullMessage = await getMessageWithSenderInfo(messageID);
+        // Emit to everyone in the chat room (except sender)
+        socket.to(`chat-${chatID}`).emit("new_message", fullMessage);
 
-      // Emit to everyone in the chat room (except sender)
-      socket.to(`chat-${chatID}`).emit("new_message", fullMessage);
-
-      // Optional: echo to sender (if your frontend expects it)
-      socket.emit("new_message", fullMessage);
-    } catch (err) {
-      console.error("Message handling error:", err);
-      socket.emit("error_message", { error: "Message failed to send" });
-    }
-  });
-
+        // Optional: echo to sender (if your frontend expects it)
+        socket.emit("new_message", fullMessage);
+      } catch (err) {
+        console.error("Message handling error:", err);
+        socket.emit("error_message", { error: "Message failed to send" });
+      }
+    });
+  } catch (err) {
+    console.error("Failed to find chats", err);
+  }
   socket.on("disconnect", () => {
     console.log("Disconnected:", socket.user.email);
   });
