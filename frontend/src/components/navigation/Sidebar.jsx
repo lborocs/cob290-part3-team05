@@ -96,8 +96,8 @@ export const Sidebar = () => {
 
   // Sign out function
   const signOut = () => {
-    localStorage.removeItem("accessToken");
-    window.location.href = "/login"; // Or use `useNavigate`
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   // User profile settings
@@ -174,17 +174,19 @@ export const Sidebar = () => {
           <div className="mt-[1rem] w-20/21 h-0.25 bg-white"></div>
 
           {/* User Profile Button */}
-          <SidebarButton
-            expanded={expanded}
-            className={`w-full hover:bg-[var(--color-overlay-dark)] rounded-lg`}
-            onClick={userSettings}
-          >
-            <ProfileIcon user={user} />
-            <div className="flex flex-col items-start">
-              <span>{user.firstName + " " + user.lastName}</span>
-              <span className="font-extralight">{user.userType}</span>
-            </div>
-          </SidebarButton>
+          {user && (
+            <SidebarButton
+              expanded={expanded}
+              className={`w-full hover:bg-[var(--color-overlay-dark)] rounded-lg`}
+              onClick={userSettings}
+            >
+              <ProfileIcon user={user} />
+              <div className="flex flex-col items-start">
+                <span>{user.firstName + " " + user.lastName}</span>
+                <span className="font-extralight">{user.userType}</span>
+              </div>
+            </SidebarButton>
+          )}
         </div>
       </div>
     </>
