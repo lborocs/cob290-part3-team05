@@ -16,6 +16,7 @@ const isTokenValid = () => {
   const token = localStorage.getItem("token");
   if (!token) {
     console.log("Error: No token found");
+    alert("Error: No token found");
     return false; // No token, not valid
   }
 
