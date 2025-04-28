@@ -28,8 +28,6 @@ const ProfileIcon = ({ user }) => {
 
 export const Sidebar = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -186,7 +184,7 @@ export const Sidebar = () => {
           >
             <ProfileIcon user={user} />
             <div className="flex flex-col items-start">
-              <span>{user.firstName + " " + user.lastName}</span>
+              <span>{user}</span>
               <span className="font-extralight">{user.userType}</span>
             </div>
           </SidebarButton>
