@@ -28,12 +28,11 @@ const ProfileIcon = ({ user }) => {
 
 export const Sidebar = () => {
   const [user, setUser] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        setLoading(true);
-
         // Get JWT token from localStorage
         const token = localStorage.getItem("token");
         const decodedToken = jwtDecode(token);
