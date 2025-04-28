@@ -16,11 +16,14 @@ const isTokenValid = () => {
   try {
     const decodedToken = jwtDecode(token);
     if (decodedToken.exp * 1000 > Date.now()) {
+      console.log("Success: Token not expired");
       return true;
     } else {
+      console.log("Error: Token expired");
       return false;
     } // Check if token is expired
   } catch (e) {
+    console.error(e);
     return false;
   }
 };
