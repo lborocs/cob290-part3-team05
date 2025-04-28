@@ -120,17 +120,16 @@ app.post("/login", async (req, res) => {
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-    /*
+    
     // Return token to client
     res.json({
       message: "Login successful",
       accessToken,
       user: payload,
-    });*/
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error during login" });
-    console.log(process.env.ACCESS_TOKEN_SECRET);
   }
 });
 
