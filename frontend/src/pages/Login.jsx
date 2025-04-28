@@ -287,13 +287,13 @@ const Login = () => {
       <div
         className={`flex flex-col w-[100vw] px-[2.5vw] py-4 min-h-[100dvh] w-max-screen bg-[var(--color-overlay)] shadow-[inset_195px_1px_179.4px_0px_rgba(0,0,0,0.57)] relative items-center justify-center overflow-visible lg:overflow-auto`}
       >
-        <div className="absolute top-[50px] left-1/2 transform -translate-x-1/2 z-40 inline-flex mb-10 gap-x-3 items-center lg:left-[20px] lg:top-[20px] lg:transform-none ">
+        <div className="absolute top-[50px] left-1/2 transform -translate-x-1/2 z-40 inline-flex mb-10 gap-x-3 items-center lg:left-[100px] lg:top-[20px] lg:transform-none ">
           {/* logo */}
           <img
             src={logo}
             alt="Make-It-All Logo"
             className="max-w-[45px] max-h-[45px] rounded-lg border-2 border-[var(--color-overlay)] lg:border-none"
-          ></img>
+          />
           {/* name beside logo */}
           <h2 className="text-lg font-bold text-[var(--color-black)] lg:text-[var(--color-white)]">
             Make-it-all
