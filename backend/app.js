@@ -130,6 +130,7 @@ app.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error during login" });
+    console.log(process.env.ACCESS_TOKEN_SECRET);
   }
 });
 
