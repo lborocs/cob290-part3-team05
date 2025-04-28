@@ -25,3 +25,13 @@
     --color-component-header-text: #FFFFFF;
   }
 }
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-overlay-light);
+  border-radius: 9999px;
+}
