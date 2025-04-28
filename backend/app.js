@@ -94,7 +94,7 @@ app.post("/login", async (req, res) => {
     }
 
     // Find user by email using the function within database.js
-    const user = await getUserByEmail(email);
+    /*const user = await getUserByEmail(email);
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -126,7 +126,7 @@ app.post("/login", async (req, res) => {
       message: "Login successful",
       accessToken,
       user: payload,
-    });
+    });*/
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error during login" });
