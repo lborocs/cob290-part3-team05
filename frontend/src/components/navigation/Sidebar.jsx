@@ -26,7 +26,6 @@ const ProfileIcon = ({ user }) => {
 };
 
 export const Sidebar = () => {
-  const { userId } = useParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
