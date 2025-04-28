@@ -1,29 +1,58 @@
-import { useState, useEffect } from 'react'
-import './App.css'
-import { Route, Routes } from 'react-router-dom'; // Import routing components
+import { useState, useEffect } from "react";
+import "./App.css";
+import { Route, Routes, Navigate } from "react-router-dom"; // Import routing components
+import { jwtDecode } from "jwt-decode";
 
-import Layout from './pages/Layout';
-import Dashboard from './pages/Dashboard'
-import NoPage from './pages/NoPage';
-import Login from './pages/Login';
-import Chats from './pages/Chats';
+import Layout from "./pages/Layout";
+import Dashboard from "./pages/Dashboard";
+import NoPage from "./pages/NoPage";
+import Login from "./pages/Login";
+import Chats from "./pages/Chats";
+
+const isTokenValid = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  try {
+    const decodedToken = jwtDecode(token);
+    if (decodedToken.exp * 1000 > Date.now()) {
+      console.log("Success: Token not expired");
+      return true;
+    } else {
+      console.log("Error: Token expired");
+      return false;
+    } // Check if token is expired
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+};
+
+export function PrivateRoute({ children }) {
+  return isTokenValid() ? children : <Navigate to="/login" replace />;
+}
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={
+            isTokenValid() ? <Layout /> : <Navigate to="/login" replace />
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="chats" element={<Chats />} />
           <Route path="*" element={<NoPage />} />
         </Route>
       </Routes>
     </>
-  )
+  );
 }
 /*
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);*/
 
-export default App
+export default App;

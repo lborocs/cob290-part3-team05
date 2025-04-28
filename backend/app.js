@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getUsers, getUser, createUser, getUserByEmail } from "./database.js";
+import { getUsers, getUser, createUser, getUserByEmail, getUserChatIDs, getMessageWithSenderInfo, insertMessage } from "./database.js";
 //import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";
 
@@ -23,6 +23,26 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
+
+//Function to authenticate call this when you need to authenticate token
+function authenticateToken(req, res, next) {
+  //Get the token from the header
+  const authHeader = req.headers["authorization"];
+  //Split the token (BEARER TOKEN)
+  //Below just checks auth header exists first before splitting
+  const token = authHeader && authHeader.split(" ")[1];
+
+  //If token is null then return 401
+  if (token == null) return res.sendStatus(401);
+
+  //Verify the token
+  //If we see a token we will verify if it true.
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
@@ -61,25 +81,6 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
-//Function to authenticate call this when you need to authenticate token
-function authenticateToken(req, res, next) {
-  //Get the token from the header
-  const authHeader = req.headers["authorization"];
-  //Split the token (BEARER TOKEN)
-  //Below just checks auth header exists first before splitting
-  const token = authHeader && authHeader.split(" ")[1];
-
-  //If token is null then return 401
-  if (token == null) return res.sendStatus(401);
-
-  //Verify the token
-  //If we see a token we will verify if it true.
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
 
 app.post("/login", async (req, res) => {
   try {
@@ -94,7 +95,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-
+    
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -105,7 +106,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+    
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -114,12 +115,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-
+    
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-
+    
     // Return token to client
     res.json({
       message: "Login successful",
@@ -137,6 +138,69 @@ app.use((err, req, res, next) => {
   res.status(500).send("Server Error");
 });
 
-app.listen(8080, "127.0.0.1", () => {
-  console.log("Server is running on port 8080");
+// Websocket set up
+
+import http from "http";
+import { Server } from "socket.io";
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://34.147.242.96"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error("Missing auth token"));
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return next(new Error("Invalid token"));
+    socket.user = user;
+    next();
+  });
+});
+
+io.on("connection", async (socket) => {
+  console.log("User connected:", socket.user.email);
+  try {
+    const chatIDs = await getUserChatIDs(socket.user.id);
+    chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
+
+    // Listen for incoming messages
+    socket.on("send_message", async ({ chatID, messageText }) => {
+      try {
+        // Save to DB
+        const messageID = await insertMessage(chatID, socket.user.id, messageText);
+
+        // Get full message with sender info
+        const fullMessage = await getMessageWithSenderInfo(messageID);
+
+        // Emit to everyone in the chat room (except sender)
+        socket.to(`chat-${chatID}`).emit("new_message", fullMessage);
+
+        // Optional: echo to sender (if your frontend expects it)
+        socket.emit("new_message", fullMessage);
+      } catch (err) {
+        console.error("Message handling error:", err);
+        socket.emit("error_message", { error: "Message failed to send" });
+      }
+    });
+  } catch (err) {
+    console.error("Failed to find chats", err);
+  }
+  socket.on("disconnect", () => {
+    console.log("Disconnected:", socket.user.email);
+  });
+});
+
+server.listen(8080, "127.0.0.1", () => {
+  console.log("Server (HTTP + WebSocket) running on port 8080");
 });
