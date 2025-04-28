@@ -95,7 +95,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-    /*
+    
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -106,7 +106,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+    /*
     // Create JWT payload
     const payload = {
       id: user.userID,
