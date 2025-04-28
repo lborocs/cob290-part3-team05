@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
 import { FaEye, FaCircleInfo } from "react-icons/fa6";
 import { ImCross } from "react-icons/im";
 import logo from "../assets/img/make-it-all-icon.png";

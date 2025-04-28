@@ -24,6 +24,26 @@ const corsOptions = {
   credentials: true,
 };
 
+//Function to authenticate call this when you need to authenticate token
+function authenticateToken(req, res, next) {
+  //Get the token from the header
+  const authHeader = req.headers["authorization"];
+  //Split the token (BEARER TOKEN)
+  //Below just checks auth header exists first before splitting
+  const token = authHeader && authHeader.split(" ")[1];
+
+  //If token is null then return 401
+  if (token == null) return res.sendStatus(401);
+
+  //Verify the token
+  //If we see a token we will verify if it true.
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
@@ -61,31 +81,8 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
-//Function to authenticate call this when you need to authenticate token
-function authenticateToken(req, res, next) {
-  //Get the token from the header
-  const authHeader = req.headers["authorization"];
-  //Split the token (BEARER TOKEN)
-  //Below just checks auth header exists first before splitting
-  const token = authHeader && authHeader.split(" ")[1];
-
-  //If token is null then return 401
-  if (token == null) return res.sendStatus(401);
-
-  //Verify the token
-  //If we see a token we will verify if it true.
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
 
 app.post("/login", async (req, res) => {
-  const plainPassword = "123456";
-  const hashed = "$2y$10$yhQzxNOYkqokZuBGlFve8OHd.XhflqHInV5DYiFiX62PNeK1dVIYm"; // replace with your hash
-
-  bcrypt.compare(plainPassword, hashed).then(console.log).catch(console.error);
   try {
     // Get email and password from request body
     const { email, password } = req.body;
@@ -132,7 +129,6 @@ app.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    console.error("Stack trace:", error.stack);
     res.status(500).json({ message: "Server error during login" });
   }
 });
