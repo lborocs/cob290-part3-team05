@@ -10,7 +10,7 @@ import Login from "./pages/Login";
 import Chats from "./pages/Chats";
 
 const isTokenValid = () => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("token");
   if (!token) return false;
 
   try {
