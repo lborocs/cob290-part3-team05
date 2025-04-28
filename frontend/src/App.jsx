@@ -47,7 +47,9 @@ function App() {
         <Route
           path="/"
           element={
-            isTokenValid() ? <Layout /> : <Navigate to="/login" replace />
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
           }
         >
           <Route index element={<Dashboard />} />
