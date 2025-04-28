@@ -1,8 +1,9 @@
-const Button = (props) => {
+const Button = ({className="",...props}) => {
 
   return (
     <>
-        <button className= "flex bg-[var(--color-overlay))] text-white py-[0.5rem] space-x-[0.3rem]" onClick={props.Function}>
+
+        <button className= {`flex ${className}`} onClick={props.onClick}>
             {props.children}
         </button>
     </>

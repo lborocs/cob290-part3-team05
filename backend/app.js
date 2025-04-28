@@ -10,6 +10,7 @@ import {
   getProjects,
   getProjectData,
 } from "./database.js";
+
 //import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";
 
@@ -56,8 +57,22 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// Middleware to check for internal request header
+function checkInternalRequest(req, res, next) {
+  const internalRequest = req.get("X-Internal-Request");
+  
+  if (internalRequest !== "true") {
+    return res.status(403).json({ message: "Forbidden: Internal request required" });
+  }
+
+  next();
+}
+
+// Apply internal request check for protected routes
+app.use("/users", checkInternalRequest);
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
+
   const users = await getUsers();
   res.send(users);
 });
@@ -112,7 +127,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-
+    
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -123,7 +138,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+    
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -132,12 +147,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-
+    
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-
+    
     // Return token to client
     res.json({
       message: "Login successful",
@@ -155,6 +170,69 @@ app.use((err, req, res, next) => {
   res.status(500).send("Server Error");
 });
 
-app.listen(8080, "0.0.0.0", () => {
-  console.log("Server is running on port 8080");
+// Websocket set up
+
+import http from "http";
+import { Server } from "socket.io";
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://34.147.242.96"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error("Missing auth token"));
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return next(new Error("Invalid token"));
+    socket.user = user;
+    next();
+  });
+});
+
+io.on("connection", async (socket) => {
+  console.log("User connected:", socket.user.email);
+  try {
+    const chatIDs = await getUserChatIDs(socket.user.id);
+    chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
+
+    // Listen for incoming messages
+    socket.on("send_message", async ({ chatID, messageText }) => {
+      try {
+        // Save to DB
+        const messageID = await insertMessage(chatID, socket.user.id, messageText);
+
+        // Get full message with sender info
+        const fullMessage = await getMessageWithSenderInfo(messageID);
+
+        // Emit to everyone in the chat room (except sender)
+        socket.to(`chat-${chatID}`).emit("new_message", fullMessage);
+
+        // Optional: echo to sender (if your frontend expects it)
+        socket.emit("new_message", fullMessage);
+      } catch (err) {
+        console.error("Message handling error:", err);
+        socket.emit("error_message", { error: "Message failed to send" });
+      }
+    });
+  } catch (err) {
+    console.error("Failed to find chats", err);
+  }
+  socket.on("disconnect", () => {
+    console.log("Disconnected:", socket.user.email);
+  });
+});
+
+server.listen(8080, "127.0.0.1", () => {
+  console.log("Server (HTTP + WebSocket) running on port 8080");
 });

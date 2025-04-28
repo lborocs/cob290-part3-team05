@@ -15,6 +15,7 @@ dist-ssr
 # Database creds
 .env*
 *.local
+.rest
 
 # Editor directories and files
 .vscode/*
