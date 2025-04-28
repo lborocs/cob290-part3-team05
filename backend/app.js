@@ -115,12 +115,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-    /*
+    
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-
+    /*
     // Return token to client
     res.json({
       message: "Login successful",
