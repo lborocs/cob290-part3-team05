@@ -66,10 +66,6 @@ echo "Installing backend production dependencies..."
 cd $TARGET_BACKEND
 sudo npm install --production
 
-# Push .htaccess file (if needed)
-echo "Pushing .htaccess..."
-sudo cp -r $ROOT_DIR/.htaccess $TARGET_DIR/
-
 # Push .env
 if [ -f "$REPO_DIR/.env" ]; then
     echo "Pushing environment variables"
