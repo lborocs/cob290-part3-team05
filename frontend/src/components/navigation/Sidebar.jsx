@@ -69,7 +69,7 @@ export const Sidebar = () => {
     };
 
     fetchUserDetails();
-  }, [userId]);
+  }, [user]);
   const menuItems = [
     {
       name: "Dashboard",
