@@ -83,17 +83,16 @@ export async function createUser(
 
 // Project functions
 export async function getProjects() {
-  const [rows] = await pool.query("SELECT * FROM projects");
+  const [rows] = await pool.query("SELECT * FROM Projects");
   return rows;
 }
 
 export async function getProjectData(id) {
   const [rows] = await pool.query(
     `
-    SELECT p.*, u.firstName, u.lastName
-    FROM projects p
-    LEFT JOIN users u ON p.ownerID = u.userID
-    WHERE p.projectID = ?
+    SELECT *
+    FROM Projects
+    WHERE projectID = ?
   `,
     [id]
   );

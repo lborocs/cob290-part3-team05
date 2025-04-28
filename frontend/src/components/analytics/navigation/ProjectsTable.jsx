@@ -54,14 +54,14 @@ const ProjectsTable = ({ data }) => {
   
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-      <div className="p-5 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+      <div className="p-5 border-b border-[#D9D9D9] bg-gradient-to-r from-[var(--color-highlight)]/30 to-white">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold text-[#1C2341]">Projects Overview</h2>
           <div className="relative">
             <input
               type="text"
               placeholder="Search projects..."
-              className="px-4 py-2 border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A2777] bg-white placeholder-[#2E3944]/50"
+              className="px-4 py-2 border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-overlay)] bg-white placeholder-[#2E3944]/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -71,13 +71,13 @@ const ProjectsTable = ({ data }) => {
       
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-[#D9D9D9]">
-          <thead className="bg-[#E8C2F4]/20">
+          <thead className="bg-[var(--color-highlight)]/20">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Project</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Timeline</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Leader</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Project</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Leader</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Status</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-[#D9D9D9]">
@@ -90,7 +90,7 @@ const ProjectsTable = ({ data }) => {
                   <tr 
                     key={project.projectId}
                     onClick={() => handleProjectClick(project.projectId)}
-                    className="hover:bg-[#E8C2F4]/10 cursor-pointer transition-colors duration-200"
+                    className="hover:bg-[var(--color-highlight)]/10 cursor-pointer transition-colors duration-200"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[#2E3944]">{project.projectId}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -100,7 +100,7 @@ const ProjectsTable = ({ data }) => {
                       <div className="text-sm text-[#2E3944]">
                         {formatDate(project.startDate)} - {formatDate(project.dueDate)}
                         {project.completionDate && project.completionDate !== 'NULL' && (
-                          <div className="text-xs text-[#5A2777] mt-1">
+                          <div className="text-xs text-[var(--color-overlay)] mt-1">
                             Completed: {formatDate(project.completionDate)}
                           </div>
                         )}
@@ -119,7 +119,7 @@ const ProjectsTable = ({ data }) => {
               })
             ) : (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-sm text-[#5A2777]">
+                <td colSpan="5" className="px-6 py-4 text-center text-sm text-[var(--color-overlay)]">
                   No projects found matching your search.
                 </td>
               </tr>
@@ -128,8 +128,8 @@ const ProjectsTable = ({ data }) => {
         </table>
       </div>
       
-      <div className="px-6 py-4 bg-[#E8C2F4]/20 border-t border-[#D9D9D9]">
-        <div className="text-sm text-[#5A2777]">
+      <div className="px-6 py-4 bg-[var(--color-highlight)]/20 border-t border-[#D9D9D9]">
+        <div className="text-sm text-[var(--color-overlay)]">
           Showing <span className="font-medium">{filteredProjects.length}</span> projects
         </div>
       </div>

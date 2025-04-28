@@ -8,6 +8,7 @@ import {
   createUser,
   getUserByEmail,
   getProjects,
+  getProjectData,
 } from "./database.js";
 //import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";

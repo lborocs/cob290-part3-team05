@@ -34,14 +34,14 @@ const UsersTable = ({ data }) => {
   
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-      <div className="p-5 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+      <div className="p-5 border-b border-[#D9D9D9] bg-gradient-to-r from-[var(--color-highlight)]/30 to-white">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold text-[#1C2341]">Users Overview</h2>
           <div className="relative">
             <input
               type="text"
               placeholder="Search users..."
-              className="px-4 py-2 border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5A2777] bg-white placeholder-[#2E3944]/50"
+              className="px-4 py-2 border border-[#D9D9D9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-overlay)] bg-white placeholder-[#2E3944]/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -51,12 +51,12 @@ const UsersTable = ({ data }) => {
       
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-[#D9D9D9]">
-          <thead className="bg-[#E8C2F4]/20">
+          <thead className="bg-[var(--color-highlight)]/20">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-[#5A2777] uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-[var(--color-overlay)] uppercase tracking-wider">Role</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-[#D9D9D9]">
@@ -68,7 +68,7 @@ const UsersTable = ({ data }) => {
                   <tr 
                     key={user.userID}
                     onClick={() => handleUserClick(user.userID)}
-                    className="hover:bg-[#E8C2F4]/10 cursor-pointer transition-colors duration-200"
+                    className="hover:bg-[var(--color-highlight)]/10 cursor-pointer transition-colors duration-200"
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[#2E3944]">{user.userID}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -85,7 +85,7 @@ const UsersTable = ({ data }) => {
               })
             ) : (
               <tr>
-                <td colSpan="4" className="px-6 py-4 text-center text-sm text-[#5A2777]">
+                <td colSpan="4" className="px-6 py-4 text-center text-sm text-[var(--color-overlay)]">
                   No users found matching your search.
                 </td>
               </tr>
@@ -94,8 +94,8 @@ const UsersTable = ({ data }) => {
         </table>
       </div>
       
-      <div className="px-6 py-4 bg-[#E8C2F4]/20 border-t border-[#D9D9D9]">
-        <div className="text-sm text-[#5A2777]">
+      <div className="px-6 py-4 bg-[var(--color-highlight)]/20 border-t border-[#D9D9D9]">
+        <div className="text-sm text-[var(--color-overlay)]">
           Showing <span className="font-medium">{filteredUsers.length}</span> users
         </div>
       </div>

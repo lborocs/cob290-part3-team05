@@ -4,7 +4,10 @@ import ProjectsTable from '../components/analytics/navigation/ProjectsTable'
 import UsersTable from '../components/analytics/navigation/UsersTable'
 
 const ManagerAnalytics = () => {
-  const [activeView, setActiveView] = useState('projects')
+  const [activeView, setActiveView] = useState(() => {
+    // Try to get the last active view from localStorage, default to 'users' if not found
+    return localStorage.getItem('analyticsActiveView') || 'projects';
+  });  
   const [projectsData, setProjectsData] = useState([])
   const [usersData, setUsersData] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -62,11 +65,14 @@ const ManagerAnalytics = () => {
   }, []);
   
   return (
-    <div className="flex flex-col w-full h-screen overflow-hidden bg-gradient-to-r from-purple-50 to-pink-50">
+    <div className="flex flex-col w-full h-screen overflow-hidden bg-gradient-to-br from-[var(--color-overlay)] to-[var(--color-highlight)]">
       <div className="w-full">
         <ToggleView 
           activeView={activeView} 
-          setActiveView={setActiveView} 
+          setActiveView={(view) => {
+            setActiveView(view);
+            localStorage.setItem('analyticsActiveView', view);
+          }} 
         />
       </div>
       
