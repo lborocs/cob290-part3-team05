@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
 //React icons
@@ -37,7 +38,7 @@ export const Sidebar = () => {
 
         // Get JWT token from localStorage
         const token = localStorage.getItem("token");
-
+        const decodedToken = jwtDecode(token);
         // Create headers with authorization
         const headers = {
           Authorization: `Bearer ${token}`,
@@ -48,7 +49,7 @@ export const Sidebar = () => {
         console.log("Request headers:", headers);
 
         // Adjust the API endpoint based on your backend structure
-        const response = await fetch(`/api/users/${userId}`, {
+        const response = await fetch(`/api/users/${decodedToken.userID}`, {
           method: "GET",
           headers: headers,
         });
