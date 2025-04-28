@@ -34,6 +34,7 @@ const UserDetails = () => {
         // Create headers with authorization
         const headers = {
           'Authorization': `Bearer ${token}`,
+          "X-Internal-Request": "true",
           'Content-Type': 'application/json'
         };
         
@@ -181,7 +182,7 @@ const UserDetails = () => {
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
           <p>Error: {error}</p>
           <p>Unable to load user details.</p>
-          <Link to="/manager-analytics" className="text-[#5A2777] hover:text-[#8A4BA7] mt-4 inline-block">
+          <Link to="/analytics" className="text-[#5A2777] hover:text-[#8A4BA7] mt-4 inline-block">
             Return to Users
           </Link>
         </div>
@@ -194,7 +195,7 @@ const UserDetails = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-[#E8C2F4]/20 border border-[#D9D9D9] p-4 rounded-md">
           <p className="text-[#5A2777]">User not found</p>
-          <Link to="/manager-analytics" className="text-[#5A2777] hover:text-[#8A4BA7] mt-4 inline-block">
+          <Link to="/analytics" className="text-[#5A2777] hover:text-[#8A4BA7] mt-4 inline-block">
             Return to Users
           </Link>
         </div>
@@ -208,7 +209,7 @@ const UserDetails = () => {
     <div className="max-w-6xl mx-auto p-6">
       {/* Navigation */}
       <div className="mb-4">
-        <Link to="/manager-analytics" className="text-[#5A2777] hover:text-[#8A4BA7] flex items-center">
+        <Link to="/analytics" className="text-[#5A2777] hover:text-[#8A4BA7] flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
