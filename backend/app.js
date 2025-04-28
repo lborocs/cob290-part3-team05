@@ -106,7 +106,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    /*
+    
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -115,7 +115,7 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-
+    /*
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
