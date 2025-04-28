@@ -14,7 +14,10 @@ import UserDetails from "./pages/UserDetails";
 
 const isTokenValid = () => {
   const token = localStorage.getItem("token");
-  if (!token) return false;
+  if (!token) {
+    console.log("Error: No token found");
+    return false; // No token, not valid
+  }
 
   try {
     const decodedToken = jwtDecode(token);
