@@ -96,7 +96,7 @@ export const Sidebar = () => {
 
   // Sign out function
   const signOut = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     navigate("/login");
   };
 
