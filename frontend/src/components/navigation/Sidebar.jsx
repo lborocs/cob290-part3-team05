@@ -16,12 +16,12 @@ import logo from "../../assets/img/make-it-all-icon.png";
 import SidebarButton from "./SidebarButton";
 
 const ProfileIcon = ({ user }) => {
-  const name = user.firstName + " " + user.lastName;
-  const [first, last] = name.split(" ");
+  //const name = user.firstName + " " + user.lastName;
+  //const [first, last] = name.split(" ");
   return (
     <div className="inline-flex items-center justify-center rounded-full bg-amber-500 text-[var(--color-overlay)] font-bold text-lg aspect-square min-w-[2.5rem] px-2">
-      {first[0]}
-      {last[0]}
+      {/*first[0]}
+      {last[0]*/}
     </div>
   );
 };
