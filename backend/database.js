@@ -36,7 +36,6 @@ export async function getUser(id) {
   return rows[0];
 }
 
-// POST /users
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
@@ -80,6 +79,24 @@ export async function createUser(
   // Return the newly created user with the auto-incremented ID
   const newUser = await getUser(result.insertId);
   return newUser;
+}
+
+// Project functions
+export async function getProjects() {
+  const [rows] = await pool.query("SELECT * FROM Projects");
+  return rows;
+}
+
+export async function getProjectData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT *
+    FROM Projects
+    WHERE projectID = ?
+  `,
+    [id]
+  );
+  return rows[0];
 }
 
 // Chat SQL Queries

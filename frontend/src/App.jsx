@@ -8,6 +8,9 @@ import Dashboard from "./pages/Dashboard";
 import NoPage from "./pages/NoPage";
 import Login from "./pages/Login";
 import Chats from "./pages/Chats";
+import ManagerAnalytics from './pages/ManagerAnalytics';
+import ProjectDetails from './pages/ProjectDetails';
+import UserDetails from './pages/UserDetails';
 
 const isTokenValid = () => {
   const token = localStorage.getItem("token");
@@ -45,14 +48,14 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="chats" element={<Chats />} />
+          <Route path="manager-analytics" element={<ManagerAnalytics />} />
+          <Route path="project-details/:projectId" element={<ProjectDetails />} />
+          <Route path="user-details/:userId" element={<UserDetails />} />
           <Route path="*" element={<NoPage />} />
         </Route>
       </Routes>
     </>
   );
 }
-/*
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);*/
 
 export default App;

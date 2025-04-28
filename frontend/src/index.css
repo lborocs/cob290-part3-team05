@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 @layer base {
   :root {
     --color-mint-500: oklch(0.72 0.11 178);
@@ -24,5 +23,17 @@
     --color-lighter-component: #f4f4f4;
     --color-component-header-bg: #124E66;
     --color-component-header-text: #FFFFFF;
+    
+    /* Status colors that match your design system */
+    --color-status-green: #0A7A5C;
+    --color-status-green-light: #D7F2EC;
+    --color-status-amber: #FCA311;
+    --color-status-amber-light: #FEF1DC;
+    --color-status-red: #FF481B;
+    --color-status-red-light: #FFDFD7;
+    --color-status-blue: #124E66;
+    --color-status-blue-light: #D9E8EE;
+    --color-status-gray: #B3B4BD;
+    --color-status-gray-light: #EEEEEF;
   }
 }

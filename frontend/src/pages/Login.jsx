@@ -83,13 +83,11 @@ const Login = () => {
   const login = async () => {
     setLoginNameState(responseState.STANDARD);
     setLoginPassState(responseState.STANDARD);
-
     // Presence check Email
     if (!loginName) {
       setLoginNameState(responseState.EMPTY);
       return false;
     }
-
     // Presence check Password
     if (!loginPassword) {
       setLoginPassState(responseState.EMPTY);

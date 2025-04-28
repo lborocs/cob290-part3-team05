@@ -2,7 +2,15 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getUsers, getUser, createUser, getUserByEmail, getUserChatIDs, getMessageWithSenderInfo, insertMessage } from "./database.js";
+import {
+  getUsers,
+  getUser,
+  createUser,
+  getUserByEmail,
+  getProjects,
+  getProjectData,
+} from "./database.js";
+
 //import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";
 
@@ -62,9 +70,9 @@ function checkInternalRequest(req, res, next) {
 
 // Apply internal request check for protected routes
 app.use("/users", checkInternalRequest);
-
 // Protected routes
-app.get("/users", async (req, res) => {
+app.get("/users", authenticateToken, async (req, res) => {
+
   const users = await getUsers();
   res.send(users);
 });
@@ -81,6 +89,30 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
+// Add project endpoints
+app.get("/projects", authenticateToken, async (req, res) => {
+  try {
+    const projects = await getProjects();
+    res.send(projects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ message: "Server error while fetching projects" });
+  }
+});
+
+app.get("/projects/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const project = await getProjectData(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.send(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Server error while fetching project" });
+  }
+});
 
 app.post("/login", async (req, res) => {
   try {
