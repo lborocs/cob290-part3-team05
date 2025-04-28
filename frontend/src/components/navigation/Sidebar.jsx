@@ -98,7 +98,7 @@ export const Sidebar = () => {
   // Sign out function
   const signOut = () => {
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/login");
   };
 
   // User profile settings
