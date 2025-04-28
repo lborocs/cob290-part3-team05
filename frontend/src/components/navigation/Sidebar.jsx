@@ -185,7 +185,7 @@ export const Sidebar = () => {
             <ProfileIcon user={user} />
             <div className="flex flex-col items-start">
               <span>{user}</span>
-              <span className="font-extralight">{user.userType}</span>
+              <span className="font-extralight">{user}</span>
             </div>
           </SidebarButton>
         </div>
