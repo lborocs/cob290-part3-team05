@@ -16,12 +16,12 @@ import logo from "../../assets/img/make-it-all-icon.png";
 import SidebarButton from "./SidebarButton";
 
 const ProfileIcon = ({ user }) => {
-  //const name = user.firstName + " " + user.lastName;
-  //const [first, last] = name.split(" ");
+  const name = user.firstName + " " + user.lastName;
+  const [first, last] = name.split(" ");
   return (
     <div className="inline-flex items-center justify-center rounded-full bg-amber-500 text-[var(--color-overlay)] font-bold text-lg aspect-square min-w-[2.5rem] px-2">
-      {/*first[0]}
-      {last[0]*/}
+      {first[0]}
+      {last[0]}
     </div>
   );
 };
@@ -58,16 +58,14 @@ export const Sidebar = () => {
 
         const data = await response.json();
         setUser(data);
-        setLoading(false);
       } catch (err) {
         console.error("Error fetching user details:", err);
         setError(err.message);
-        setLoading(false);
       }
     };
 
     fetchUserDetails();
-  }, [user]);
+  }, []);
   const menuItems = [
     {
       name: "Dashboard",
@@ -184,8 +182,8 @@ export const Sidebar = () => {
           >
             <ProfileIcon user={user} />
             <div className="flex flex-col items-start">
-              <span>{user}</span>
-              <span className="font-extralight">{user}</span>
+              <span>{user.firstName + " " + user.lastName}</span>
+              <span className="font-extralight">{user.userType}</span>
             </div>
           </SidebarButton>
         </div>
