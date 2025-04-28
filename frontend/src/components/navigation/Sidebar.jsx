@@ -29,6 +29,7 @@ const ProfileIcon = ({ user }) => {
 export const Sidebar = () => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserDetails = async () => {
