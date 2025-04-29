@@ -1,14 +1,14 @@
 import React from "react";
 import DirectMessage from "./DirectMessage";
-import mockData from "../../../mockdb.json";
 
-const DirectMessageList = () => {
+const DirectMessageList = (props) => {
   // Access only the directMessages from the mockData object
-  const directMessages = mockData.directMessages;
+  const directMessages = props.messages;
 
   return (
     <div className="p-4">
-      {directMessages.map((msg) => (
+      {directMessages?.length > 0 ? (
+      directMessages.map((msg) => (
         <DirectMessage
           key={msg.id}
           profilePicture={msg.profilePicture}
@@ -17,7 +17,10 @@ const DirectMessageList = () => {
           lastMessage={msg.lastMessage}
           isPinned={msg.isPinned}
         />
-      ))}
+      ))
+    ) : (
+      <p>No direct messages</p>
+    )}
     </div>
   );
 };
