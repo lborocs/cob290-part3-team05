@@ -2,7 +2,6 @@ import React from "react";
 import DirectMessage from "./DirectMessage";
 
 const DirectMessageList = (props) => {
-  // Access only the directMessages from the mockData object
   const directMessages = props.messages;
 
   return (
