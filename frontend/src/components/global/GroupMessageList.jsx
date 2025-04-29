@@ -2,7 +2,6 @@ import React from "react";
 import GroupMessage from "./GroupMessage";
 
 const GroupMessageList = (props) => {
-  // Access only the groupMessages from the mockData object
   const groupMessages = props.messages;
 
   return (
