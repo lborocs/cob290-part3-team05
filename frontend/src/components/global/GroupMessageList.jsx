@@ -1,14 +1,13 @@
 import React from "react";
 import GroupMessage from "./GroupMessage";
-import mockData from "../../../mockdb.json";
 
-const GroupMessageList = () => {
+const GroupMessageList = (props) => {
   // Access only the groupMessages from the mockData object
-  const groupMessages = mockData.groupMessages;
+  const groupMessages = props.messages;
 
   return (
     <div className="p-4">
-      {groupMessages.map((msg) => (
+      {groupmessages ? groupMessages.map((msg) => (
         <GroupMessage
           key={msg.id}
           profilePicture={msg.profilePicture}
@@ -17,7 +16,7 @@ const GroupMessageList = () => {
           lastMessage={msg.lastMessage}
           isPinned={msg.isPinned}
         />
-      ))}
+      )) : ""}
     </div>
   );
 };
