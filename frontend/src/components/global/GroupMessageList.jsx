@@ -7,7 +7,8 @@ const GroupMessageList = (props) => {
 
   return (
     <div className="p-4">
-      {groupmessages ? groupMessages.map((msg) => (
+      {groupmessages?.length > 0 ? (
+      groupMessages.map((msg) => (
         <GroupMessage
           key={msg.id}
           profilePicture={msg.profilePicture}
@@ -16,7 +17,10 @@ const GroupMessageList = (props) => {
           lastMessage={msg.lastMessage}
           isPinned={msg.isPinned}
         />
-      )) : ""}
+      ))
+    ) : (
+      <p>No groups available</p>
+      )}
     </div>
   );
 };
