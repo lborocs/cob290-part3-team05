@@ -27,7 +27,7 @@ const Chats = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Controls sidebar visibility
   const [isNotificationsOn, setIsNotificationsOn] = useState(false); // Notifications toggle state
   const [directMessages, setDirectMessages] = useState(null);
-  const[groupMessages, setGroupMessages] = useState(null);
+  const [groupMessages, setGroupMessages] = useState(null);
   
 
   const [messages, setMessages] = useState([]);
