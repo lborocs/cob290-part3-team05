@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
+import DirectMessagesList from "../components/global/DirectMessageList";
+import GroupMessagesList from "../components/global/GroupMessageList";
+
+
 // React icons
 import {
   FaPlus,
@@ -22,6 +26,9 @@ const Chats = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Search input state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Controls sidebar visibility
   const [isNotificationsOn, setIsNotificationsOn] = useState(false); // Notifications toggle state
+  const [directMessages, setDirectMessages] = useState(null);
+  const [groupMessages, setGroupMessages] = useState(null);
+  
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -113,7 +120,13 @@ const Chats = () => {
         </div>
 
         {/* Chat List */}
-        <div className="mt-4 flex-1 overflow-y-auto space-y-3"></div>
+        <div className="mt-4 flex-1 overflow-y-auto space-y-3">
+        {activeTab === "direct" ? (
+            <DirectMessagesList searchTerm={searchTerm} messages={directMessages} />
+         ) : (
+            <GroupMessagesList searchTerm={searchTerm} messages={groupMessages} />
+            )}
+        </div>
 
         {/* User Info Section */}
         <div className="mt-4 flex items-center gap-3 p-3 border-t-[2px] border-white">

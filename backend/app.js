@@ -1,3 +1,4 @@
+
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
@@ -54,7 +55,6 @@ function authenticateToken(req, res, next) {
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
-
 app.use(express.json());
 
 // Middleware to check for internal request header
