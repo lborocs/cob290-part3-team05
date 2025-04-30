@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import {
   getUsers,
   getUser,
@@ -9,10 +10,19 @@ import {
   getUserByEmail,
   getProjects,
   getProjectData,
-} from "./database.js";
-
-//import loginRoutes from "./routes/login.js";
-import dotenv from "dotenv";
+  getChats,
+  getMessages,
+  sendMessage,
+  deleteMessage,
+  editMessage,
+  leaveGroup,
+  updateGroupTitle,
+  getNonMembers,
+  addMemberToGroup,
+  deleteChat
+} from './database.js';
+import http from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
 
@@ -60,7 +70,6 @@ app.use(express.json());
 // Middleware to check for internal request header
 function checkInternalRequest(req, res, next) {
   const internalRequest = req.get("X-Internal-Request");
-  
   if (internalRequest !== "true") {
     return res.status(403).json({ message: "Forbidden: Internal request required" });
   }
@@ -72,7 +81,6 @@ function checkInternalRequest(req, res, next) {
 app.use("/users", checkInternalRequest);
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
-
   const users = await getUsers();
   res.send(users);
 });
@@ -165,74 +173,197 @@ app.post("/login", async (req, res) => {
   }
 });
 
+const server = http.createServer(app);
+
+// Socket.IO initialization
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // frontend URL
+    methods: ["GET", "POST"]
+  },
+  path: "/socket.io"
+});
+
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
+  // Join chat room
+  socket.on("joinChat", (chatID) => {
+    socket.join(chatID);
+    console.log(`Socket ${socket.id} joined chat ${chatID}`);
+  });
+
+  // Receive and broadcast new message
+  socket.on("sendMessage", (messageData) => {
+    io.to(messageData.chatID).emit("receiveMessage", messageData);
+  });
+
+  // Handle typing indicator
+  socket.on("userTyping", ({ userID, userName, chatID }) => {
+    // Broadcast to others in the same chat room that someone is typing
+    socket.to(chatID).emit("userTyping", { userID, userName, chatID });
+  });
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log("A user disconnected:", socket.id);
+  });
+});
+
+app.get("/chats/:userID", async (req, res) => {
+  try {
+    const userID = req.params.userID;
+    const chats = await getChats(userID);
+    res.json(chats);
+  } catch (error) {
+    res.status(500).json({ message: "Database connection failed" });
+  }
+});
+
+app.get("/chats/:chatID/messages", async (req, res) => {
+  try {
+    const chatID = req.params.chatID;
+    const messages = await getMessages(chatID);
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
+app.post("/chats/:chatID/messages", async (req, res) => {
+  try {
+    const { chatID } = req.params;
+    const { senderUserID, messageText } = req.body;
+
+    if (!senderUserID || !messageText.trim()) {
+      return res.status(400).json({ message: "senderUserID and messageText are required." });
+    }
+
+    const newMessage = await sendMessage(chatID, senderUserID, messageText);
+
+    if (!newMessage) {
+      return res.status(500).json({ message: "Failed to send message" });
+    }
+
+    res.status(201).json({
+      messageID: newMessage.messageID,
+      senderUserID: newMessage.senderUserID,
+      chatID: newMessage.chatID,
+      messageText: newMessage.messageText,
+      timestamp: newMessage.timestamp,
+    });
+
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
+app.delete("/messages/:messageID", async (req, res) => {
+  const { messageID } = req.params;
+
+  try {
+    const deleted = await deleteMessage(messageID);
+    if (!deleted) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    res.status(200).json({ message: "Message deleted" });
+  } catch (err) {
+    console.error("Error deleting message:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.put("/messages/:messageID", async (req, res) => {
+  const { messageID } = req.params;
+  const { newText } = req.body;
+
+  if (!newText?.trim()) {
+    return res.status(400).json({ message: "New text is required." });
+  }
+
+  const success = await editMessage(messageID, newText);
+  if (success) {
+    res.status(200).json({ message: "Message updated." });
+  } else {
+    res.status(404).json({ message: "Message not found." });
+  }
+});
+
+app.put("/chats/:chatID/title", async (req, res) => {
+  const { chatID } = req.params;
+  const { newTitle } = req.body;
+
+  try {
+    await updateGroupTitle(chatID, newTitle);
+    res.status(200).json({ message: "Chat title updated" });
+  } catch (err) {
+    console.error("Error updating chat title:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/chats/:chatID/non-members", async (req, res) => {
+  const { chatID } = req.params;
+  try {
+    const users = await getNonMembers(chatID);
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching non-members:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/chats/:chatID/members", async (req, res) => {
+  const { chatID } = req.params;
+  const { userID } = req.body;
+
+  try {
+    const systemMessage = await addMemberToGroup(chatID, userID);
+
+    console.log("Emitting system message:", systemMessage);
+    io.emit("receiveMessage", systemMessage);
+
+    res.status(200).json({ success: true });
+
+  } catch (err) {
+    console.error("Error adding member:", err);
+    res.status(500).json({ error: "Failed to add member" });
+  }
+});
+
+app.delete('/chats/:chatID/leave/:userID', async (req, res) => {
+  const { chatID, userID } = req.params;
+
+  try {
+    const systemMessage = await leaveGroup(chatID, userID);
+    io.to(chatID).emit("receiveMessage", systemMessage);
+    res.status(200).json({ message: 'Left group', systemMessage });
+  } catch (err) {
+    console.error("Leave group error:", err.message);
+
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/chats/:chatID', async (req, res) => {
+  const { chatID } = req.params;
+
+  try {
+    const result = await deleteChat(chatID);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Delete chat error:", err);
+    res.status(500).json({ error: "Failed to delete chat" });
+  }
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send("Server Error");
 });
 
-// Websocket set up
-
-import http from "http";
-import { Server } from "socket.io";
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://34.147.242.96"
-    ],
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
-
-io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  if (!token) return next(new Error("Missing auth token"));
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return next(new Error("Invalid token"));
-    socket.user = user;
-    next();
-  });
-});
-
-io.on("connection", async (socket) => {
-  console.log("User connected:", socket.user.email);
-  try {
-    const chatIDs = await getUserChatIDs(socket.user.id);
-    chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
-
-    // Listen for incoming messages
-    socket.on("send_message", async ({ chatID, messageText }) => {
-      try {
-        // Save to DB
-        const messageID = await insertMessage(chatID, socket.user.id, messageText);
-
-        // Get full message with sender info
-        const fullMessage = await getMessageWithSenderInfo(messageID);
-
-        // Emit to everyone in the chat room (except sender)
-        socket.to(`chat-${chatID}`).emit("new_message", fullMessage);
-
-        // Optional: echo to sender (if your frontend expects it)
-        socket.emit("new_message", fullMessage);
-      } catch (err) {
-        console.error("Message handling error:", err);
-        socket.emit("error_message", { error: "Message failed to send" });
-      }
-    });
-  } catch (err) {
-    console.error("Failed to find chats", err);
-  }
-  socket.on("disconnect", () => {
-    console.log("Disconnected:", socket.user.email);
-  });
-});
-
 server.listen(8080, "127.0.0.1", () => {
-  console.log("Server (HTTP + WebSocket) running on port 8080");
+  console.log("Server is running on port 8080");
 });
