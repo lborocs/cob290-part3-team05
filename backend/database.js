@@ -147,12 +147,12 @@ export async function getMessages(chatID) {
 export async function sendMessage(chatID, senderUserID, messageText) {
     try {
         const [result] = await pool.query(`
-            INSERT INTO MessagesTable (senderUserID, chatID, messageText, timestamp)
-            VALUES (?, ?, ?, NOW()); 
+            INSERT INTO MessagesTable (senderUserID, chatID, messageText, timestamp, isDeleted, isEdited)
+            VALUES (?, ?, ?, NOW(), 0, 0); 
         `, [senderUserID, chatID, messageText]);
 
         const [newMessage] = await pool.query(`
-            SELECT messageID, senderUserID, chatID, messageText, timestamp 
+            SELECT messageID, senderUserID, chatID, messageText, timestamp, isDeleted, isEdited
             FROM MessagesTable WHERE messageID = ?;
         `, [result.insertId]);
 
@@ -199,8 +199,8 @@ export async function editMessage(messageID, newText) {
         const oldText = existing[0].messageText;
 
         await pool.query(
-            `INSERT INTO EditedMessagesArchive (messageID, textBeforeEdit)
-             VALUES (?, ?)`,
+            `INSERT INTO EditedMessagesArchive (messageID, textBeforeEdit, timeStampOfEdit)
+             VALUES (?, ?, NOW())`,
             [messageID, oldText]
         );
 
