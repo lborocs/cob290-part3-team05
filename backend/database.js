@@ -333,6 +333,7 @@ export async function updateGroupTitle(chatID, newTitle) {
         [newTitle, chatID]
     );
     return result;
+}
 
 // Project functions
 export async function getProjects() {
@@ -342,7 +343,7 @@ export async function getProjects() {
 
 export async function getProjectData(id) {
   const [rows] = await pool.query(
-    `
+    `s
     SELECT *
     FROM Projects
     WHERE projectID = ?
