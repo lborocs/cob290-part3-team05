@@ -2,10 +2,14 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getUsers, getUser, createUser, getUserByEmail } from "./database.js";
-//import loginRoutes from "./routes/login.js";
 import dotenv from "dotenv";
 import {
+  getUsers,
+  getUser,
+  createUser,
+  getUserByEmail,
+  getProjects,
+  getProjectData,
   getChats,
   getMessages,
   sendMessage,
@@ -38,43 +42,6 @@ const corsOptions = {
   credentials: true,
 };
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
-
-app.use(express.json());
-
-// Middleware to check for internal request header
-function checkInternalRequest(req, res, next) {
-  const internalRequest = req.get("X-Internal-Request");
-
-  if (internalRequest !== "true") {
-    return res.status(403).json({ message: "Forbidden: Internal request required" });
-  }
-
-  next();
-}
-
-// Apply internal request check for protected routes
-app.use("/users", checkInternalRequest);
-
-// Protected routes
-app.get("/users", async (req, res) => {
-  const users = await getUsers();
-  res.send(users);
-});
-
-app.get("/users/:id", async (req, res) => {
-  const id = req.params.id;
-  const user = await getUser(id);
-  res.send(user);
-});
-
-app.post("/users", async (req, res) => {
-  const { userEmail, firstName, lastName, userType } = req.body;
-  const user = await createUser(userEmail, firstName, lastName, userType);
-  res.status(201).send(user);
-});
-
 //Function to authenticate call this when you need to authenticate token
 function authenticateToken(req, res, next) {
   //Get the token from the header
@@ -95,6 +62,66 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+app.use(express.json());
+
+// Middleware to check for internal request header
+function checkInternalRequest(req, res, next) {
+  const internalRequest = req.get("X-Internal-Request");
+  if (internalRequest !== "true") {
+    return res.status(403).json({ message: "Forbidden: Internal request required" });
+  }
+
+  next();
+}
+
+// Apply internal request check for protected routes
+app.use("/users", checkInternalRequest);
+// Protected routes
+app.get("/users", authenticateToken, async (req, res) => {
+  const users = await getUsers();
+  res.send(users);
+});
+
+app.get("/users/:id", async (req, res) => {
+  const id = req.params.id;
+  const user = await getUser(id);
+  res.send(user);
+});
+
+app.post("/users", async (req, res) => {
+  const { userEmail, firstName, lastName, userType } = req.body;
+  const user = await createUser(userEmail, firstName, lastName, userType);
+  res.status(201).send(user);
+});
+
+// Add project endpoints
+app.get("/projects", authenticateToken, async (req, res) => {
+  try {
+    const projects = await getProjects();
+    res.send(projects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ message: "Server error while fetching projects" });
+  }
+});
+
+app.get("/projects/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const project = await getProjectData(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+    res.send(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Server error while fetching project" });
+  }
+});
+
 app.post("/login", async (req, res) => {
   try {
     // Get email and password from request body
@@ -108,7 +135,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-
+    
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -119,7 +146,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
+    
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -128,12 +155,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-
+    
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-
+    
     // Return token to client
     res.json({
       message: "Login successful",
@@ -340,4 +367,3 @@ app.use((err, req, res, next) => {
 server.listen(8080, "127.0.0.1", () => {
   console.log("Server is running on port 8080");
 });
-
