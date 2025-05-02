@@ -11,7 +11,7 @@ const ManagerAnalytics = () => {
   const [projectsData, setProjectsData] = useState([]);
   const [usersData, setUsersData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -66,7 +66,7 @@ const ManagerAnalytics = () => {
   }, []);
 
   return (
-    <div className="flex flex-col w-full h-screen overflow-hidden bg-gradient-to-br from-[var(--color-overlay)] to-[var(--color-highlight)]">
+    <div className="flex flex-col w-full h-screen overflow-hidden bg-gradient-to-r from-[var(--color-overlay-light)] to-[var(--color-highlight)]">
       <div className="w-full">
         <ToggleView
           activeView={activeView}

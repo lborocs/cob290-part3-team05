@@ -9,6 +9,8 @@ import {
   getUserByEmail,
   getProjects,
   getProjectData,
+  isLeadingProject,
+  getProjectsTeamLeader,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -60,9 +62,11 @@ app.use(express.json());
 // Middleware to check for internal request header
 function checkInternalRequest(req, res, next) {
   const internalRequest = req.get("X-Internal-Request");
-  
+
   if (internalRequest !== "true") {
-    return res.status(403).json({ message: "Forbidden: Internal request required" });
+    return res
+      .status(403)
+      .json({ message: "Forbidden: Internal request required" });
   }
 
   next();
@@ -72,7 +76,6 @@ function checkInternalRequest(req, res, next) {
 app.use("/users", checkInternalRequest);
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
-
   const users = await getUsers();
   res.send(users);
 });
@@ -92,6 +95,22 @@ app.post("/users", async (req, res) => {
 // Add project endpoints
 app.get("/projects", authenticateToken, async (req, res) => {
   try {
+    const userRole = req.user.userType;
+    const userID = req.user.id;
+
+    // If user is team leader just show projects they are leading or a employee on
+    if (userRole === "TeamLeader") {
+      const projects = await getProjectsTeamLeader(userID);
+      return res.send(projects);
+    }
+
+    // If user is employee don't show projects
+    if (userRole === "Employee") {
+      return res.status(403).json({
+        message: "Forbidden: Employees do not have access to project data",
+      });
+    }
+
     const projects = await getProjects();
     res.send(projects);
   } catch (error) {
@@ -100,12 +119,24 @@ app.get("/projects", authenticateToken, async (req, res) => {
   }
 });
 
-app.get("/projects/:id", async (req, res) => {
+app.get("/projects/:id", authenticateToken, async (req, res) => {
   try {
+    const userRole = req.user.userType;
     const id = req.params.id;
+    const userID = req.user.id;
     const project = await getProjectData(id);
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
+    }
+    //Check permission of they can see the project data or not
+    if (userRole !== "admin" && userRole !== "manager") {
+      const hasAccess = await isLeadingProject(userID, id);
+      if (!hasAccess) {
+        return res.status(403).json({
+          message:
+            "Forbidden: You do not have permission to access this project",
+        });
+      }
     }
     res.send(project);
   } catch (error) {
@@ -127,7 +158,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-    
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -138,7 +169,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    
+
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -147,12 +178,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-    
+
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-    
+
     // Return token to client
     res.json({
       message: "Login successful",
@@ -182,11 +213,11 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "http://localhost:5173",
-      "http://34.147.242.96"
+      "http://34.147.242.96",
     ],
     methods: ["GET", "POST"],
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 io.use((socket, next) => {
@@ -204,13 +235,17 @@ io.on("connection", async (socket) => {
   console.log("User connected:", socket.user.email);
   try {
     const chatIDs = await getUserChatIDs(socket.user.id);
-    chatIDs.forEach(chatID => socket.join(`chat-${chatID}`));
+    chatIDs.forEach((chatID) => socket.join(`chat-${chatID}`));
 
     // Listen for incoming messages
     socket.on("send_message", async ({ chatID, messageText }) => {
       try {
         // Save to DB
-        const messageID = await insertMessage(chatID, socket.user.id, messageText);
+        const messageID = await insertMessage(
+          chatID,
+          socket.user.id,
+          messageText
+        );
 
         // Get full message with sender info
         const fullMessage = await getMessageWithSenderInfo(messageID);

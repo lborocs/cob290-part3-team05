@@ -87,6 +87,28 @@ export async function getProjects() {
   return rows;
 }
 
+export async function isLeadingProject(userID, projectID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * FROM Projects
+    Where projectID = ? AND projectLeader = ?
+  `,
+    [projectID, userID]
+  );
+  return rows.length > 0;
+}
+
+export async function getProjectsTeamLeader(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * From Projects
+    WHERE projectLeader = ?
+  `,
+    [userID]
+  );
+  return rows;
+}
+
 export async function getProjectData(id) {
   const [rows] = await pool.query(
     `
@@ -110,21 +132,27 @@ export async function insertMessage(chatID, senderUserID, messageText) {
 }
 
 export async function getMessageWithSenderInfo(messageID) {
-  const message = await db.get(`
+  const message = await db.get(
+    `
     SELECT 
       m.messageID, m.chatID, m.messageText, m.senderUserID, m.createdAt,
       u.firstName, u.lastName, u.userEmail
     FROM Messages m
     JOIN Users u ON m.senderUserID = u.userID
     WHERE m.messageID = ?
-  `, [messageID]);
+  `,
+    [messageID]
+  );
 
   return message;
 }
 
 export async function getUserChatIDs(userID) {
-  const rows = await db.all(`
+  const rows = await db.all(
+    `
     SELECT chatID FROM ChatUsers WHERE userID = ?
-  `, [userID]);
-  return rows.map(row => row.chatID);
+  `,
+    [userID]
+  );
+  return rows.map((row) => row.chatID);
 }
