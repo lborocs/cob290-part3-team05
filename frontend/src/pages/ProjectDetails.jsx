@@ -27,40 +27,44 @@ const ProjectDetails = () => {
     const fetchProjectDetails = async () => {
       try {
         setLoading(true);
-        
+  
         // Get JWT token from localStorage
         const token = localStorage.getItem('token');
-        
+  
         // Create headers with authorization
         const headers = {
           'Authorization': `Bearer ${token}`,
           "X-Internal-Request": "true",
           'Content-Type': 'application/json'
         };
-        
+  
         console.log('Request headers:', headers);
-        
+  
         // Adjust the API endpoint based on your backend structure
-        const response = await fetch(`/api/projects/${projectId}`, {
+        const response = await fetch(`/api/project/${projectId}`, {
           method: 'GET',
           headers: headers
         });
-        
+  
         if (!response.ok) {
           throw new Error(`Failed to fetch project: ${response.status}`);
         }
-        
-        const data = await response.json();
-        setProject(data);
-        
+  
+        const responseData = await response.json();
+  
+        // Extract project data from responseData
+        const { project, userRole, userID } = responseData;
+  
+        setProject(project);
+  
         // Calculate metrics from the project data
-        if (data) {
-          // These calculations are placeholders - replace with real calculations
-          const startDate = data.startDate ? new Date(data.startDate) : new Date();
-          const dueDate = data.dueDate ? new Date(data.dueDate) : new Date();
+        if (project) {
+          const startDate = project.startDate ? new Date(project.startDate) : new Date();
+          const dueDate = project.dueDate ? new Date(project.dueDate) : new Date();
           const today = new Date();
           
-          // Sample metrics calculations
+
+          //Sawan Update Data Here
           setMetrics({
             tasksCompleted: Math.floor(Math.random() * 40) + 10, // Replace with actual task data
             tasksTotal: Math.floor(Math.random() * 30) + 40, // Replace with actual task data
@@ -71,7 +75,7 @@ const ProjectDetails = () => {
             daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24))
           });
         }
-        
+  
         setLoading(false);
       } catch (err) {
         console.error('Error fetching project details:', err);

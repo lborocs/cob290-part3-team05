@@ -15,12 +15,18 @@ const UserDetails = () => {
   // Sample metrics data - replace with actual API data
   const [metrics, setMetrics] = useState({
     projectsAssigned: 0,
-    projectsCompleted: 0,
     tasksAssigned: 0,
     tasksCompleted: 0,
     avgTaskCompletionTime: 0,
     currentWorkload: 0,
-    productivityScore: 0
+    productivityScore: 0,
+    doughnutData: {
+      "toDo": 1,
+      "completed": 1,
+      "inProgress": 1,
+      "overdue": 0
+    }
+  
   });
 
   useEffect(() => {
@@ -40,30 +46,38 @@ const UserDetails = () => {
         
         console.log('Request headers:', headers);
         
-        // Adjust the API endpoint based on your backend structure
+        
         const response = await fetch(`/api/users/${userId}`, {
           method: 'GET',
           headers: headers
         });
+
+        const analyticsResponse = await fetch(`/api/users/${userId}/analytics`, {
+          method: 'GET',
+          headers: headers
+        });
         
-        if (!response.ok) {
+        if (!response.ok || !analyticsResponse.ok) {
           throw new Error(`Failed to fetch user: ${response.status}`);
         }
         
         const data = await response.json();
+        const analyticsData = await analyticsResponse.json();
+
         setUser(data);
+        
         
         // Calculate metrics from the user data
         if (data) {
           // Sample metrics calculations - replace with actual data
           setMetrics({
-            projectsAssigned: Math.floor(Math.random() * 5) + 1,
-            projectsCompleted: Math.floor(Math.random() * 4),
-            tasksAssigned: Math.floor(Math.random() * 30) + 10,
-            tasksCompleted: Math.floor(Math.random() * 20) + 5,
+            projectsAssigned: analyticsData.numProjects || 0,
+            tasksAssigned: analyticsData.numTasks || 0,
+            tasksCompleted: analyticsData.numCompletedTasks,
             avgTaskCompletionTime: Math.floor(Math.random() * 5) + 1, // days
-            currentWorkload: Math.floor(Math.random() * 100), // percentage
-            productivityScore: Math.floor(Math.random() * 50) + 50 // out of 100
+            currentWorkload: analyticsData.workLoadUser || 0, // percentage
+            productivityScore: analyticsData.productivityScore,// out of 100
+            doughnutData : analyticsData.doughnutData
           });
         }
         
@@ -99,18 +113,20 @@ const UserDetails = () => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Chart data for tasks progress
-  const tasksData = {
-    labels: ['Completed', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.tasksCompleted, metrics.tasksAssigned - metrics.tasksCompleted],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+  // Doughnut Chart
+   // Doughnut Chart
+ // Doughnut Chart with improved colors
+const tasksData = {
+  labels: ['To Do', 'In Progress', 'Completed', 'Overdue'],
+  datasets: [
+    {
+      data: [metrics.doughnutData.completed, metrics.doughnutData.toDo, metrics.doughnutData.inProgress, metrics.doughnutData.overdue],
+      backgroundColor: ['#8e8e91', '#eab385', '#adda9d', '#f5a3a3'],
+      borderColor: ['#1E6B37', '#D48F07', '#136A8C', '#B02A37'], // Darker shades for 3D effect
+      borderWidth: 1, // Slightly thicker border for better visibility
+    },
+  ],
+};
 
   // Chart data for workload distribution
   const workloadData = {
@@ -250,7 +266,7 @@ const UserDetails = () => {
               {metrics.projectsAssigned}
             </div>
             <div className="text-[#2E3944] text-sm mt-1">
-              {metrics.projectsCompleted} completed
+              ongoing projects
             </div>
           </div>
           

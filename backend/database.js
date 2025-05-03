@@ -109,6 +109,87 @@ export async function getProjectsTeamLeader(userID) {
   return rows;
 }
 
+export async function getNumProjectUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numProjects
+    FROM UserTeams
+    WHERE userID = ?
+  `,
+    [userID]
+  );
+  return rows[0].numProjects;
+}
+
+export async function getNumTasksUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numTasks
+    FROM Tasks
+    WHERE assigneeId = ?
+  `,
+    [userID]
+  );
+  return rows[0].numTasks;
+}
+
+export async function getNumCompletedTasks(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numCompletedTasks
+    FROM Tasks
+    WHERE assigneeID = ? AND status = 'Completed'
+  `,
+    [userID]
+  );
+  return rows[0].numCompletedTasks;
+}
+
+export async function getWorkLoadUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      ROUND(
+        (SUM(manHours) / SUM(DATEDIFF(dueDate, startDate) + 1)) 
+        / 8 * 100, 
+        1
+      ) AS workloadPercentage
+    FROM 
+      tasks
+    WHERE 
+      assigneeId = ?
+      AND startDate IS NOT NULL 
+      AND dueDate IS NOT NULL
+      AND manHours IS NOT NULL;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return rows[0]?.workloadPercentage || 0; // Return 0 if no data is found
+}
+
+export async function getDoughnutData(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN status = 'in progress' THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN dueDate < NOW() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      tasks
+    WHERE 
+      assigneeId = ?;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return {
+    toDo: rows[0]?.toDo || 0,
+    completed: rows[0]?.completed || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
 export async function getProjectData(id) {
   const [rows] = await pool.query(
     `

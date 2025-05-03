@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -11,6 +11,11 @@ import {
   getProjectData,
   isLeadingProject,
   getProjectsTeamLeader,
+  getNumProjectUser,
+  getNumCompletedTasks,
+  getWorkLoadUser,
+  getNumTasksUser,
+  getDoughnutData,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -72,8 +77,6 @@ function checkInternalRequest(req, res, next) {
   next();
 }
 
-// Apply internal request check for protected routes
-app.use("/users", checkInternalRequest);
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
   const users = await getUsers();
@@ -84,6 +87,37 @@ app.get("/users/:id", async (req, res) => {
   const id = req.params.id;
   const user = await getUser(id);
   res.send(user);
+});
+
+app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
+  // Check if admin or manager
+
+  const id = req.params.id;
+  const numProject = await getNumProjectUser(id);
+  const numTasks = await getNumTasksUser(id);
+  const numCompletedTasks = await getNumCompletedTasks(id);
+  const workLoadUser = await getWorkLoadUser(id);
+  const doughnutData = await getDoughnutData(id);
+
+  const taskCompletionRate = (numCompletedTasks / numTasks) * 100;
+
+  const workloadImpact = 100 / workLoadUser;
+
+  // Calculate the Productivity Score (weighted average)
+  const productivityScore =
+    taskCompletionRate * 0.5 + workloadImpact * 0.3 + 100 * 0.2;
+
+  const roundedProductivityScore = Number(productivityScore.toFixed(0));
+
+  const responseData = {
+    numProjects: numProject,
+    numTasks: numTasks,
+    numCompletedTasks: numCompletedTasks,
+    workLoadUser: workLoadUser,
+    productivityScore: roundedProductivityScore,
+    doughnutData: doughnutData,
+  };
+  res.send(responseData);
 });
 
 app.post("/users", async (req, res) => {
@@ -119,15 +153,12 @@ app.get("/projects", authenticateToken, async (req, res) => {
   }
 });
 
-app.get("/projects/:id", authenticateToken, async (req, res) => {
+app.get("/project/:id", authenticateToken, async (req, res) => {
   try {
     const userRole = req.user.userType;
     const id = req.params.id;
     const userID = req.user.id;
-    const project = await getProjectData(id);
-    if (!project) {
-      return res.status(404).json({ message: "Project not found" });
-    }
+
     //Check permission of they can see the project data or not
     if (userRole !== "admin" && userRole !== "manager") {
       const hasAccess = await isLeadingProject(userID, id);
@@ -138,7 +169,55 @@ app.get("/projects/:id", authenticateToken, async (req, res) => {
         });
       }
     }
-    res.send(project);
+
+    const project = await getProjectData(id);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const responseData = {
+      project: project,
+      userRole: userRole,
+      userID: userID,
+    };
+
+    res.send(responseData);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Server error while fetching project" });
+  }
+});
+
+app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
+  try {
+    const userRole = req.user.userType;
+    const id = req.params.id;
+    const userID = req.user.id;
+
+    //Check permission of they can see the project data or not
+    if (userRole !== "admin" && userRole !== "manager") {
+      const hasAccess = await isLeadingProject(userID, id);
+      if (!hasAccess) {
+        return res.status(403).json({
+          message:
+            "Forbidden: You do not have permission to access this project",
+        });
+      }
+    }
+
+    //Getting Project Data write function getProjectData
+    const projectOverviewData = await getProjectData(id);
+    if (!projectOverviewData) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const responseData = {
+      projectData: projectOverview,
+      userRole: userRole,
+      userID: userID,
+    };
+
+    res.send(responseData);
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error while fetching project" });
