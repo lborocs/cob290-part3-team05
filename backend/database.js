@@ -202,6 +202,61 @@ export async function getProjectData(id) {
   return rows[0];
 }
 
+export async function getNumTasksProj(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    p.projectID,
+    p.projectTitle,
+    COUNT(CASE WHEN t.status = 'to do' THEN 1 END) AS toDo,
+    COUNT(CASE WHEN t.status = 'in progress' THEN 1 END) AS inProgress,
+    COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+    COUNT(CASE WHEN t.dueDate < NOW() AND t.status != 'completed' THEN 1 END) AS overdue
+FROM 
+    userTeams ut
+JOIN 
+    Projects p ON ut.projectID = p.projectID
+LEFT JOIN 
+    Tasks t ON p.projectID = t.projectID
+WHERE 
+    ut.userID = 1
+GROUP BY 
+    p.projectID, p.projectTitle
+ORDER BY 
+    p.projectTitle;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+export async function getRecentActivityUser(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    t.name AS taskName,
+    p.projectTitle AS projectName,
+    ABS(DATEDIFF(CURDATE(),
+        CASE
+            WHEN t.status = 'Completed' THEN t.completionDate
+            WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN t.startDate
+        END
+    )) AS daysAgo
+FROM tasks t
+JOIN projects p ON t.projectId = p.projectId
+WHERE (
+    (t.status = 'Completed')
+    OR (t.status = 'To Do' AND t.startDate <= CURDATE())
+)
+AND t.assigneeId = ?
+ORDER BY daysAgo ASC
+LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
 // Chat SQL Queries
 
 export async function insertMessage(chatID, senderUserID, messageText) {

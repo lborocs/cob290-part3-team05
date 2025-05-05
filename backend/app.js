@@ -16,6 +16,8 @@ import {
   getWorkLoadUser,
   getNumTasksUser,
   getDoughnutData,
+  getNumTasksProj,
+  getRecentActivityUser,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -98,6 +100,8 @@ app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
   const numCompletedTasks = await getNumCompletedTasks(id);
   const workLoadUser = await getWorkLoadUser(id);
   const doughnutData = await getDoughnutData(id);
+  const taskByProject = await getNumTasksProj(id);
+  const recentActivityUser = await getRecentActivityUser(id);
 
   const taskCompletionRate = (numCompletedTasks / numTasks) * 100;
 
@@ -116,6 +120,8 @@ app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
     workLoadUser: workLoadUser,
     productivityScore: roundedProductivityScore,
     doughnutData: doughnutData,
+    taskByProject: taskByProject,
+    recentActivityUser: recentActivityUser,
   };
   res.send(responseData);
 });
