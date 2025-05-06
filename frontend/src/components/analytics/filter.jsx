@@ -1,92 +1,84 @@
 import React, { useState } from "react";
-import Button from "../global/Button";
-import { HomeIcon } from '@heroicons/react/24/outline';
-import { ListBulletIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/outline';
 
+// 🔽 Reusable Multi-select Dropdown Component
+const MultiSelectDropdown = ({ label, options }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selected, setSelected] = useState([]);
 
-const DropdownIcon = ({ options = [] }) => {
-    const [open, setOpen] = useState(false);
+    const toggleSelect = (option) => {
+        setSelected((prev) =>
+            prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
+        );
+    };
+
+    const clearSelection = () => setSelected([]);
 
     return (
-        <div className="relative inline-block">
-            <button onClick={() => setOpen(!open)} className="p-1">
-                <ListBulletIcon className="w-5 h-5 inline-block stroke-gray-600 hover:stroke-[#963FB0]" />
-            </button>
-            <div
-                className={`absolute left-full top-0 ml-2 w-40 bg-white shadow-lg rounded-xl border border-gray-200 z-50 transition-all duration-700 ease-in-out transform ${
-                    open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                }`}
-            >
-                <ul className="py-2 text-base text-slate-800 font-medium space-y-1">
-                    {options.length > 0 ? (
-                        options.map((item, i) => (
-                            <li key={i} className="flex items-center space-x-2 px-4 py-2 hover:bg-[#963FB0] hover:text-white cursor-pointer rounded-md transition-colors duration-200">
-                                {item}
-                            </li>
-                        ))
-                    ) : (
-                        <li className="px-4 py-2 text-gray-400 italic">No options</li>
-                    )}
-                </ul>
+        <div className="mb-6 ml-5">
+            <div className="flex items-center justify-between text-xl text-[#963FB0] font-semibold">
+                {label}
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setIsOpen(!isOpen)}>
+                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    <button onClick={clearSelection}>
+                        <TrashIcon className="w-5 h-5 stroke-gray-600 hover:stroke-[#963FB0]" />
+                    </button>
+                </div>
             </div>
+
+            {isOpen && (
+                <div className="mt-2 p-2 border rounded-xl bg-white shadow max-w-xs">
+                    {options.map((opt, i) => (
+                        <label key={i} className="flex items-center space-x-2 py-1 px-2 hover:bg-gray-100 rounded-md">
+                            <input
+                                type="checkbox"
+                                checked={selected.includes(opt)}
+                                onChange={() => toggleSelect(opt)}
+                                className="form-checkbox text-[#963FB0]"
+                            />
+                            <span>{opt}</span>
+                        </label>
+                    ))}
+                </div>
+            )}
+
+            {/* Show selected tags */}
+            {selected.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {selected.map((s, i) => (
+                        <span key={i} className="bg-[#963FB0] text-white px-3 py-1 rounded-full text-sm">
+                            {s}
+                        </span>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
 
 const Filter = () => {
     return (
-        <div className="w-70 h-250 bg-gray-50 rounded-4xl ml-4 pt-7">
+        <div className="w-full md:w-72 bg-gray-50 rounded-4xl ml-4 p-6 shadow-lg">
             <nav>
-                <ul className="w-62 h-50 bg-white rounded-4xl ml-4 pt-5 shadow-lg">
+                {/* ✅ Fixed Top Menu Section */}
+                <ul className="bg-white rounded-4xl shadow p-4 mb-6 space-y-3">
                     {["Main Dashboard", "Project Dashboard", "Team Dashboard"].map((label, i) => (
-                        <li key={i} className="p-2 rounded ml-8 border-r-4 border-transparent hover:border-[#963FB0] hover:text-[#963FB0] transition-all duration-200 ">
-                            <HomeIcon className="w-5 h-5 inline-block mr-2 stroke-gray-600 hover:stroke-[#963FB0]" />
+                        <li
+                            key={i}
+                            className="flex items-center gap-2 text-gray-700 hover:text-[#963FB0] hover:border-r-4 border-transparent hover:border-[#963FB0] px-2 py-1 transition-all duration-200"
+                        >
+                            <HomeIcon className="w-5 h-5 stroke-gray-600" />
                             {label}
                         </li>
                     ))}
                 </ul>
 
-                <div className="ml-5 mt-4 text-xl text-[#963FB0] font-semibold flex items-center gap-2">
-                    Year
-                    <DropdownIcon options={["2025", "2024", "2023"]} />
-                    <TrashIcon className="w-5 h-5 inline-block stroke-gray-600 hover:stroke-[#963FB0]" />
-                </div>
-
-                <ul>
-                    {["2025", "2024", "2023"].map((year, i) => (
-                        <li key={i} className="w-62 h-10 bg-gray-200 ml-4 pt-5 mt-4 transition-all duration-300 transform hover:translate-x-2 hover:bg-[#963FB0] hover:text-white flex items-center px-4">
-                            <li className="transform translate-y-[-10px] ml-4">{year}</li>
-                        </li>
-                    ))}
-                </ul>
-
-                <div className="ml-5 mt-4 text-xl text-[#963FB0] font-semibold flex items-center gap-2">
-                    Team Member
-                    <DropdownIcon options={["Vanessa", "Sawan", "Ella", "Stephen", "Jesse", "Kubby"]} />
-                    <TrashIcon className="w-5 h-5 inline-block stroke-gray-600 hover:stroke-[#963FB0]" />
-                </div>
-
-                <ul className="grid grid-cols-2 gap-2">
-                    {["Vanessa", "Sawan", "Ella", "Stephen", "Jesse", "Kubby"].map((member, i) => (
-                        <li key={i} className="ml-4 mt-4 w-20 h-10 bg-gray-200 pt-2 transition-all duration-300 transform hover:translate-x-2 hover:bg-[#963FB0] hover:text-white flex items-center justify-center">
-                            {member}
-                        </li>
-                    ))}
-                </ul>
-
-                <div className="ml-5 mt-4 text-xl text-[#963FB0] font-semibold flex items-center gap-2">
-                    Project Name
-                    <DropdownIcon options={["Graduate-1", "Sleep---2", "dance----3", "never study again"]} />
-                    <TrashIcon className="w-5 h-5 inline-block stroke-gray-600 hover:stroke-[#963FB0]" />
-                </div>
-
-                <ul>
-                    {["Graduate-1", "Sleep---2", "dance----3", "never study again"].map((proj, i) => (
-                        <li key={i} className="w-62 h-10 bg-gray-200 ml-4 pt-5 mt-4 transition-all duration-300 transform hover:translate-x-2 hover:bg-[#963FB0] hover:text-white flex items-center px-4">
-                            <li className="transform translate-y-[-10px] ml-4">{proj}</li>
-                        </li>
-                    ))}
-                </ul>
+                {/* 🔽 Enhanced Filter Dropdowns */}
+                <MultiSelectDropdown label="Year" options={["2025", "2024", "2023", "2022", "2021", "2020"]} />
+                <MultiSelectDropdown label="Team Member" options={["Vanessa", "Sawan", "Ella", "Stephen", "Jesse", "Kubby", "Maya", "John"]} />
+                <MultiSelectDropdown label="Project Name" options={["Graduate-1", "Sleep---2", "Dance----3", "Never Study Again", "Redesign AI", "Client App Dev"]} />
             </nav>
         </div>
     );
