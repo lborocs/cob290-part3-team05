@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { HomeIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/outline';
 
+// 🔽 Reusable Multi-select Dropdown Component
 const MultiSelectDropdown = ({ label, options }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selected, setSelected] = useState([]);
@@ -59,6 +60,7 @@ const MultiSelectDropdown = ({ label, options }) => {
                 </div>
             )}
 
+            {/* Show selected tags */}
             {selected.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                     {selected.map((s, i) => (
