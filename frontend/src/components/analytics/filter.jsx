@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { HomeIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-// 🔽 Reusable Multi-select Dropdown Component
+
 const MultiSelectDropdown = ({ label, options }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selected, setSelected] = useState([]);
@@ -44,7 +44,7 @@ const MultiSelectDropdown = ({ label, options }) => {
                 </div>
             )}
 
-            {/* Show selected tags */}
+          
             {selected.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                     {selected.map((s, i) => (
@@ -62,7 +62,7 @@ const Filter = () => {
     return (
         <div className="w-full md:w-72 bg-gray-50 rounded-4xl ml-4 p-6 shadow-lg">
             <nav>
-                {/* ✅ Fixed Top Menu Section */}
+                
                 <ul className="bg-white rounded-4xl shadow p-4 mb-6 space-y-3">
                     {["Main Dashboard", "Project Dashboard", "Team Dashboard"].map((label, i) => (
                         <li
@@ -75,7 +75,7 @@ const Filter = () => {
                     ))}
                 </ul>
 
-                {/* 🔽 Enhanced Filter Dropdowns */}
+                
                 <MultiSelectDropdown label="Year" options={["2025", "2024", "2023", "2022", "2021", "2020"]} />
                 <MultiSelectDropdown label="Team Member" options={["Vanessa", "Sawan", "Ella", "Stephen", "Jesse", "Kubby", "Maya", "John"]} />
                 <MultiSelectDropdown label="Project Name" options={["Graduate-1", "Sleep---2", "Dance----3", "Never Study Again", "Redesign AI", "Client App Dev"]} />
