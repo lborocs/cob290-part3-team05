@@ -372,6 +372,8 @@ const Chats = () => {
     fetch(`/api/chats/${currentUserID}`)
       .then((res) => res.json())
       .then((data) => {
+        console.log("Chats:", data);
+        setChats(data);
         const selectedChat = data.find((chat) => chat.chatID === chatID);
         if (selectedChat) {
           setChatTitle(selectedChat.chatTitle);
@@ -406,6 +408,7 @@ const Chats = () => {
         setSearchTerm={setSearchTerm}
         chats={chats}
         setChatID={setChatID}
+        chatID={chatID}
       />
 
       {/* Middle Section */}

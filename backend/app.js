@@ -19,7 +19,8 @@ import {
   updateGroupTitle,
   getNonMembers,
   addMemberToGroup,
-  deleteChat
+  deleteChat,
+  createChat
 } from './database.js';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -332,6 +333,22 @@ app.post("/chats/:chatID/members", async (req, res) => {
     res.status(500).json({ error: "Failed to add member" });
   }
 });
+
+app.post("/chats", async (req,res) => {
+  const { chatName, chatType, creatorID, userIDList  } = req.body
+
+  try {
+    const systemMessage = await createChat(chatName, chatType, creatorID, userIDList)
+
+    console.log("Emitting system message:", systemMessage)
+    io.emit("receiveMessage", systemMessage)
+
+    res.status(200).json({ success: true })
+  } catch (err) {
+    console.error("Error creating chat", err)
+    res.status(500).json({ error: "Failed to create chat"})
+  }
+})
 
 app.delete('/chats/:chatID/leave/:userID', async (req, res) => {
   const { chatID, userID } = req.params;
