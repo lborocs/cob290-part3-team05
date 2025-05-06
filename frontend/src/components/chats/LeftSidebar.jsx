@@ -17,6 +17,7 @@ const LeftSidebar = ({
 }) => {
   const directMessages = chats.filter((chat) => chat.chatType === "Private");
   const groupMessages = chats.filter((chat) => chat.chatType === "Group");
+  const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
 
   return (
     <div
@@ -29,7 +30,9 @@ const LeftSidebar = ({
         <button
           className="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
           style={{ backgroundColor: "var(--color-overlay-dark)" }}
-          onClick={createChat}
+          onClick={() => {
+            setIsCreateChatOpen(true);
+          }}
         >
           <FaPlus className="text-white w-4 h-4" />
         </button>
@@ -87,6 +90,10 @@ const LeftSidebar = ({
           />
         )}
       </div>
+
+      {isCreateChatOpen && (
+        <CreateChatModal onCancel={() => setIsCreateChatOpen(false)} />
+      )}
     </div>
   );
 };
