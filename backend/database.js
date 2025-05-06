@@ -36,6 +36,26 @@ export async function getUser(id) {
   return rows[0];
 }
 
+export async function getGanttChartData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      p.projectID,
+      p.projectTitle,
+      p.startDate,
+      p.dueDate
+    FROM 
+      userTeams ut
+    JOIN 
+      Projects p ON ut.projectID = p.projectID
+    WHERE 
+      ut.userID = 1;
+  `,
+    [id]
+  );
+  return rows;
+}
+
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)

@@ -18,6 +18,7 @@ import {
   getDoughnutData,
   getNumTasksProj,
   getRecentActivityUser,
+  getGanttChartData,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -102,6 +103,7 @@ app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
   const doughnutData = await getDoughnutData(id);
   const taskByProject = await getNumTasksProj(id);
   const recentActivityUser = await getRecentActivityUser(id);
+  const ganttChartData = await getGanttChartData(id);
 
   const taskCompletionRate = (numCompletedTasks / numTasks) * 100;
 
@@ -122,6 +124,7 @@ app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
     doughnutData: doughnutData,
     taskByProject: taskByProject,
     recentActivityUser: recentActivityUser,
+    ganttChartData: ganttChartData,
   };
   res.send(responseData);
 });

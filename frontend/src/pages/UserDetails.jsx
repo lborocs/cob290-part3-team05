@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import ProjectGanttChart from '../components/analytics/chart/ProjectGanttChart';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
@@ -27,8 +28,8 @@ const UserDetails = () => {
       "overdue": 0
     },
     tasksByProject: [],
-    recentActivityUser: []
-  
+    recentActivityUser: [],
+    ganttChartData: []
   });
 
   useEffect(() => {
@@ -81,7 +82,8 @@ const UserDetails = () => {
             productivityScore: analyticsData.productivityScore,// out of 100
             doughnutData : analyticsData.doughnutData,
             tasksByProject: analyticsData.taskByProject || [],
-            recentActivityUser: analyticsData.recentActivityUser || []
+            recentActivityUser: analyticsData.recentActivityUser || [],
+            ganttChartData: analyticsData.ganttChartData || []
           });
         }
         
@@ -117,7 +119,21 @@ const UserDetails = () => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Doughnut Chart
+      // Transform the API data into the desired format
+    const projects = metrics.ganttChartData.map((project) => ({
+      name: project.projectTitle,
+      startDate: project.startDate.split('T')[0], // Extract date part
+      endDate: project.dueDate.split('T')[0],    // Extract date part
+    }));
+
+    console.log(projects);
+  
+
+
+    
+
+  
+    
   
  // Doughnut Chart with improved colors
  const tasksData = {
@@ -164,28 +180,28 @@ const UserDetails = () => {
         data: metrics.tasksByProject.map((project) => project.toDo), // To Do tasks
         backgroundColor: '#8e8e91', // Grey
         borderRadius: 25, // Rounded corners
-        barThickness: 50, // Adjust bar width
+        barThickness: 40, // Adjust bar width
       },
       {
         label: 'In Progress',
         data: metrics.tasksByProject.map((project) => project.inProgress), // In Progress tasks
         backgroundColor: '#eab385', // Amber
         borderRadius: 25, // Rounded corners
-        barThickness: 50, // Adjust bar width
+        barThickness: 40, // Adjust bar width
       },
       {
         label: 'Completed',
         data: metrics.tasksByProject.map((project) => project.completed), // Completed tasks
         backgroundColor: '#adda9d', // Green
         borderRadius: 25, // Rounded corners
-        barThickness: 50, // Adjust bar width
+        barThickness: 40, // Adjust bar width
       },
       {
         label: 'Overdue',
         data: metrics.tasksByProject.map((project) => project.overdue), // Overdue tasks
         backgroundColor: '#f5a3a3', // Red
         borderRadius: 25, // Rounded corners
-        barThickness: 50, // Adjust bar width
+        barThickness: 40, // Adjust bar width
       },
     ],
   };
@@ -381,42 +397,12 @@ const UserDetails = () => {
         </div>
       </div>
       
-      {/* Additional User Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Current Workload</h2>
-          </div>
-          <div className="p-4 h-64 flex items-center justify-center">
-            <Doughnut data={workloadData} options={chartOptions} />
-          </div>
-        </div>
-        
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Assigned Projects</h2>
-          </div>
-          <div className="p-4 divide-y divide-[#D9D9D9]">
-            {/* Sample project assignments - replace with actual data */}
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Website Redesign</div>
-              <div className="text-xs text-[#2E3944]">2 tasks remaining • Due in 5 days</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Mobile App Development</div>
-              <div className="text-xs text-[#2E3944]">5 tasks remaining • Due in 14 days</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Database Migration</div>
-              <div className="text-xs text-[#2E3944]">Completed • 3 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">API Integration</div>
-              <div className="text-xs text-[#2E3944]">1 task remaining • Due tomorrow</div>
-            </div>
-          </div>
-        </div>
+      <div className="mt-6 bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+      <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+        <h2 className="text-lg font-semibold text-[#1C2341]">Project Timeline</h2>
       </div>
+      <ProjectGanttChart projects={projects} />
+    </div>
       
       
       {/* Recent Activity */}
