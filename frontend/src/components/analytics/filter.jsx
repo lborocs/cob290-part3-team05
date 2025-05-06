@@ -1,70 +1,96 @@
 import React, { useState } from "react";
-import { HomeIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, TrashIcon } from "@heroicons/react/24/outline";
 
-// 🔽 Reusable Multi-select Dropdown Component
 const MultiSelectDropdown = ({ label, options }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selected, setSelected] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filteredOptions, setFilteredOptions] = useState(options);
 
     const toggleSelect = (option) => {
         setSelected((prev) =>
-            prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
+            prev.includes(option)
+                ? prev.filter((item) => item !== option)
+                : [...prev, option]
         );
     };
 
     const clearSelection = () => setSelected([]);
-
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        setFilteredOptions(options.filter((opt) => opt.toLowerCase().includes(value.toLowerCase())));
-    };
+    const filteredOptions = options.filter((opt) =>
+        opt.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
-        <div className="mb-6 ml-5">
-            <div className="flex items-center justify-between text-xl text-[#963FB0] font-semibold">
-                {label}
+        <div className="mb-6 ml-2 w-full max-w-xs">
+
+            <div className="flex items-center justify-between text-lg font-semibold text-[#963FB0]">
+                <span>{label}</span>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setIsOpen(!isOpen)}>
-                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    <button
+                        onClick={() => setIsOpen((prev) => !prev)}
+                        className="hover:scale-110 transition-transform duration-200"
+                    >
+                        <ChevronDownIcon
+                            className={`w-5 h-5 transition-transform duration-300 ${
+                                isOpen ? "rotate-180" : ""
+                            }`}
+                        />
                     </button>
-                    <button onClick={clearSelection}>
+                    <button
+                        onClick={clearSelection}
+                        className="hover:scale-110 transition-transform duration-200"
+                    >
                         <TrashIcon className="w-5 h-5 stroke-gray-600 hover:stroke-[#963FB0]" />
                     </button>
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="mt-2 p-2 border rounded-xl bg-white shadow max-w-xs">
+            <div
+                className={`transition-all duration-300 origin-top transform ${
+                    isOpen
+                        ? "scale-100 opacity-100 mt-3"
+                        : "scale-95 opacity-0 h-0 overflow-hidden"
+                }`}
+            >
+                <div className="p-3 border border-gray-200 rounded-2xl bg-white shadow-lg">
+                
                     <input
                         type="text"
                         value={searchTerm}
-                        onChange={handleSearchChange}
-                        placeholder="Search..."
-                        className="w-full p-2 border rounded-lg mb-2"
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={`Search ${label.toLowerCase()}...`}
+                        className="w-full p-2 mb-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#963FB0] focus:border-transparent"
                     />
 
-                    {filteredOptions.map((opt, i) => (
-                        <label key={i} className="flex items-center space-x-2 py-1 px-2 hover:bg-gray-100 rounded-md">
-                            <input
-                                type="checkbox"
-                                checked={selected.includes(opt)}
-                                onChange={() => toggleSelect(opt)}
-                                className="form-checkbox text-[#963FB0]"
-                            />
-                            <span>{opt}</span>
-                        </label>
-                    ))}
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((opt, i) => (
+                                <label
+                                    key={i}
+                                    className="flex items-center space-x-2 py-2 px-3 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selected.includes(opt)}
+                                        onChange={() => toggleSelect(opt)}
+                                        className="text-[#963FB0] focus:ring-[#963FB0] rounded"
+                                    />
+                                    <span className="text-sm text-gray-700">{opt}</span>
+                                </label>
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-400 italic px-2">No results found.</p>
+                        )}
+                    </div>
                 </div>
-            )}
+            </div>
 
-            {/* Show selected tags */}
             {selected.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-3">
                     {selected.map((s, i) => (
-                        <span key={i} className="bg-[#963FB0] text-white px-3 py-1 rounded-full text-sm">
+                        <span
+                            key={i}
+                            className="bg-[#963FB0] text-white px-3 py-1 rounded-full text-sm shadow-md transition hover:bg-[#7a2a91]"
+                        >
                             {s}
                         </span>
                     ))}
@@ -74,30 +100,4 @@ const MultiSelectDropdown = ({ label, options }) => {
     );
 };
 
-const Filter = () => {
-    return (
-        <div className="w-full md:w-72 bg-gray-50 rounded-4xl ml-4 p-6 shadow-lg">
-            <nav>
-                
-                <ul className="bg-white rounded-4xl shadow p-4 mb-6 space-y-3">
-                    {["Main Dashboard", "Project Dashboard", "Team Dashboard"].map((label, i) => (
-                        <li
-                            key={i}
-                            className="flex items-center gap-2 text-gray-700 hover:text-[#963FB0] hover:border-r-4 border-transparent hover:border-[#963FB0] px-2 py-1 transition-all duration-200"
-                        >
-                            <HomeIcon className="w-5 h-5 stroke-gray-600" />
-                            {label}
-                        </li>
-                    ))}
-                </ul>
-
-                
-                <MultiSelectDropdown label="Year" options={["2025", "2024", "2023", "2022", "2021", "2020"]} />
-                <MultiSelectDropdown label="Team Member" options={["Vanessa", "Sawan", "Ella", "Stephen", "Jesse", "Kubby", "Maya", "John"]} />
-                <MultiSelectDropdown label="Project Name" options={["Graduate-1", "Sleep---2", "Dance----3", "Never Study Again", "Redesign AI", "Client App Dev"]} />
-            </nav>
-        </div>
-    );
-};
-
-export default Filter;
+export default MultiSelectDropdown;
