@@ -428,14 +428,34 @@ const Chats = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          body: JSON.stringify(chatData),
         },
+        body: JSON.stringify(chatData),
       });
 
       if (!res.ok) throw new Error("Error whilst creating chat");
     } catch (err) {
       console.error("Failed to create chat:", err);
     }
+
+    fetch(`/api/chats/${currentUserID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChats(data);
+
+        // If user has chats, auto-select the first one
+        if (data.length > 0) {
+          setChatID(data[0].chatID);
+          setChatTitle(data[0].chatTitle);
+          setChatType(data[0].chatType);
+          setCreatorID(data[0].creatorID);
+        } else {
+          // No chats available
+          setChatTitle("No chats yet");
+          setChatType(null);
+          setChatID(null);
+        }
+      })
+      .catch((error) => console.error("Error fetching chats:", error));
   };
 
   return (

@@ -338,6 +338,7 @@ app.post("/chats/:chatID/members", async (req, res) => {
 
 app.post("/chats", async (req, res) => {
   const { chatName, chatType, creatorID, userIDList } = req.body;
+  console.log(req.body)
 
   try {
     const { chatID, alreadyExists, systemMessage } = await createChat(chatName, chatType, creatorID, userIDList);
