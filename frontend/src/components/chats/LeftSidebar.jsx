@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import DirectMessageList from "./DirectMessageList";
 import GroupMessageList from "./GroupMessageList";
 
@@ -14,9 +14,18 @@ const LeftSidebar = ({
   setChatID,
   chatID,
   createChat,
+  handleChangeChat,
 }) => {
   const directMessages = chats.filter((chat) => chat.chatType === "Private");
   const groupMessages = chats.filter((chat) => chat.chatType === "Group");
+
+  useEffect(() => {
+    if (chats.length > 0) {
+      handleChangeChat(chats[0].chatID); // First chat in the array
+    } else {
+      handleChangeChat(null); // Error handling (No chats available)
+    }
+  }, []);
 
   return (
     <div
@@ -40,10 +49,11 @@ const LeftSidebar = ({
         {["direct", "groups"].map((tab) => (
           <button
             key={tab}
-            className={`relative flex-1 text-sm text-center py-1 ${activeTab === tab
+            className={`relative flex-1 text-sm text-center py-1 ${
+              activeTab === tab
                 ? "font-bold text-white"
                 : "text-[var(--color-white)]"
-              }`}
+            }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab.toUpperCase()}
@@ -74,14 +84,14 @@ const LeftSidebar = ({
           <DirectMessageList
             searchTerm={searchTerm}
             messages={directMessages}
-            setChatID={setChatID}
+            setChatID={handleChangeChat}
             chatID={chatID}
           />
         ) : (
           <GroupMessageList
             searchTerm={searchTerm}
             messages={groupMessages}
-            setChatID={setChatID}
+            setChatID={handleChangeChat}
             chatID={chatID}
           />
         )}
