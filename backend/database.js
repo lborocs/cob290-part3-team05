@@ -6,34 +6,34 @@ dotenv.config({ path: "./.env" });
 
 // Fetching db info from enviroment vars ".env" - Will use github secrets to set up
 const pool = mysql
-  .createPool({
-    host: process.env.DB_SERVERNAME || "localhost",
-    user: process.env.DB_USERNAME || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "make_it_all",
-  })
-  .promise();
+    .createPool({
+        host: process.env.DB_SERVERNAME || "localhost",
+        user: process.env.DB_USERNAME || "root",
+        password: process.env.DB_PASSWORD || "",
+        database: process.env.DB_NAME || "make_it_all",
+    })
+    .promise();
 
 // USER QUERIES
 
 // GET /users
 export async function getUsers() {
-  const [rows] = await pool.query("SELECT * FROM Users");
-  return rows;
+    const [rows] = await pool.query("SELECT * FROM Users");
+    return rows;
 }
 
 // GET /user/:id
 export async function getUser(id) {
-  const [rows] = await pool.query(
-    `
+    const [rows] = await pool.query(
+        `
     SELECT * 
     FROM Users
     WHERE userID = ?
     `,
-    [id]
-  );
-  console.log(rows[0]);
-  return rows[0];
+        [id]
+    );
+    console.log(rows[0]);
+    return rows[0];
 }
 
 /*export async function createUser(userEmail, firstName, lastName, userType) {
@@ -49,15 +49,15 @@ export async function getUser(id) {
 
 // Get user by email
 export async function getUserByEmail(email) {
-  const [rows] = await pool.query(
-    `
+    const [rows] = await pool.query(
+        `
       SELECT * 
       FROM Users
       WHERE userEmail = ?
     `,
-    [email]
-  );
-  return rows[0];
+        [email]
+    );
+    return rows[0];
 }
 
 // Create user with password hash
@@ -199,7 +199,7 @@ export async function editMessage(messageID, newText) {
         const oldText = existing[0].messageText;
 
         await pool.query(
-            `INSERT INTO EditedMessagesArchive (messageID, textBeforeEdit, timeStampOfEdit)
+            `INSERT INTO EditedMessagesArchive (messageID, messageBeforeEdit, timeStampOfEdit)
              VALUES (?, ?, NOW())`,
             [messageID, oldText]
         );
@@ -337,7 +337,7 @@ export async function updateGroupTitle(chatID, newTitle) {
 
 // POST /chats
 export async function createChat(chatName, chatType, creatorID, userIDList) {
-    if(chatType == "Private"){
+    if (chatType == "Private") {
         const [userA, userB] = userIDList;
         const [existingChats] = await pool.query(
             `SELECT cu1.chatID FROM ChatUsers cu1
@@ -346,7 +346,7 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
              WHERE cu1.userID = ? AND cu2.userID = ? AND c.chatType = 'Private'
              GROUP BY cu1.chatID
              HAVING COUNT(DISTINCT cu1.userID) = 2`,
-             [userA, userB]
+            [userA, userB]
         )
 
         if (existing.length > 0) {
@@ -355,32 +355,32 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
     }
     const [result] = await pool.query(
         `INSERT INTO Chats (chatName,chatType,creatorID) VALUES (?,?,?)`,
-        [chatName,chatType,creatorID]
+        [chatName, chatType, creatorID]
     )
     const chatID = result.insertId;
 
-    for(const userID of userIDList) {
+    for (const userID of userIDList) {
         await pool.query(
             `INSERT INTO ChatUsers (chatID,userID,pinnedChat) VALUES (?,?,0)`,
-            [chatID,userID]
+            [chatID, userID]
         )
-    } 
+    }
 }
 
 // Project functions
 export async function getProjects() {
-  const [rows] = await pool.query("SELECT * FROM Projects");
-  return rows;
+    const [rows] = await pool.query("SELECT * FROM Projects");
+    return rows;
 }
 
 export async function getProjectData(id) {
-  const [rows] = await pool.query(
-    `s
+    const [rows] = await pool.query(
+        `s
     SELECT *
     FROM Projects
     WHERE projectID = ?
   `,
-    [id]
-  );
-  return rows[0];
+        [id]
+    );
+    return rows[0];
 }

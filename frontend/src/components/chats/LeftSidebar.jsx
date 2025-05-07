@@ -40,11 +40,10 @@ const LeftSidebar = ({
         {["direct", "groups"].map((tab) => (
           <button
             key={tab}
-            className={`relative flex-1 text-sm text-center py-1 ${
-              activeTab === tab
+            className={`relative flex-1 text-sm text-center py-1 ${activeTab === tab
                 ? "font-bold text-white"
                 : "text-[var(--color-white)]"
-            }`}
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab.toUpperCase()}

@@ -136,7 +136,7 @@ app.post("/login", async (req, res) => {
 
     // Find user by email using the function within database.js
     const user = await getUserByEmail(email);
-    
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -147,7 +147,7 @@ app.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    
+
     // Create JWT payload
     const payload = {
       id: user.userID,
@@ -156,12 +156,12 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
-    
+
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "2h",
     });
-    
+
     // Return token to client
     res.json({
       message: "Login successful",
@@ -334,8 +334,8 @@ app.post("/chats/:chatID/members", async (req, res) => {
   }
 });
 
-app.post("/chats", async (req,res) => {
-  const { chatName, chatType, creatorID, userIDList  } = req.body
+app.post("/chats", async (req, res) => {
+  const { chatName, chatType, creatorID, userIDList } = req.body
 
   try {
     const systemMessage = await createChat(chatName, chatType, creatorID, userIDList)
@@ -346,7 +346,7 @@ app.post("/chats", async (req,res) => {
     res.status(200).json({ success: true })
   } catch (err) {
     console.error("Error creating chat", err)
-    res.status(500).json({ error: "Failed to create chat"})
+    res.status(500).json({ error: "Failed to create chat" })
   }
 })
 

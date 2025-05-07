@@ -32,7 +32,6 @@ const socket = io("http://localhost:8080", {
 const Chats = () => {
   // Config
   const currentUserID = 1;
-  const defaultChatID = 1;
   const currentUserName = "Alex";
 
   // UI state
@@ -52,7 +51,7 @@ const Chats = () => {
   const [chats, setChats] = useState([]);
   const [chatTitle, setChatTitle] = useState("Loading...");
   const [chatType, setChatType] = useState(null);
-  const [chatID, setChatID] = useState(defaultChatID);
+  const [chatID, setChatID] = useState(null);
   const [creatorID, setCreatorID] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -300,7 +299,7 @@ const Chats = () => {
       socket.emit("joinChat", chatID);
     };
 
-    const onDisconnect = () => {};
+    const onDisconnect = () => { };
 
     const onConnectError = (err) => {
       console.error("Connection error:", err.message);
@@ -372,20 +371,23 @@ const Chats = () => {
     fetch(`/api/chats/${currentUserID}`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Chats:", data);
         setChats(data);
-        const selectedChat = data.find((chat) => chat.chatID === chatID);
-        if (selectedChat) {
-          setChatTitle(selectedChat.chatTitle);
-          setChatType(selectedChat.chatType);
-          setCreatorID(selectedChat.creatorID);
+
+        // If user has chats, auto-select the first one
+        if (data.length > 0) {
+          setChatID(data[0].chatID);
+          setChatTitle(data[0].chatTitle);
+          setChatType(data[0].chatType);
+          setCreatorID(data[0].creatorID);
         } else {
-          setChatTitle("Chat Not Found");
+          // No chats available
+          setChatTitle("No chats yet");
           setChatType(null);
+          setChatID(null);
         }
       })
-      .catch((error) => console.error("Error fetching chat title:", error));
-  }, [chatID, currentUserID]);
+      .catch((error) => console.error("Error fetching chats:", error));
+  }, [currentUserID]);
 
   useEffect(() => {
     fetch(`/api/chats/${chatID}/messages`)
@@ -524,11 +526,10 @@ const Chats = () => {
                 <div
                   id={`msg-${index}`}
                   key={msg.messageID || `${msg.senderUserID}-${index}`}
-                  className={`flex items-center ${
-                    msg.senderUserID === currentUserID
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
+                  className={`flex items-center ${msg.senderUserID === currentUserID
+                    ? "justify-end"
+                    : "justify-start"
+                    }`}
                 >
                   {/* Avatar for Others (Left) */}
                   {msg.senderUserID !== currentUserID && (
@@ -575,11 +576,10 @@ const Chats = () => {
                     </div>
                   ) : (
                     <div
-                      className={`flex flex-col max-w-[75%] ${
-                        msg.senderUserID === currentUserID
-                          ? "items-end"
-                          : "items-start"
-                      }`}
+                      className={`flex flex-col max-w-[75%] ${msg.senderUserID === currentUserID
+                        ? "items-end"
+                        : "items-start"
+                        }`}
                     >
                       {/* Name and Timestamp */}
                       <div className="text-xs text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
@@ -591,7 +591,7 @@ const Chats = () => {
                         <span className="text-gray-400">
                           {formatTimestamp(msg.timestamp)}
                         </span>
-                        {msg.is_edited && (
+                        {msg.isEdited && (
                           <span className="italic text-gray-400 text-[11px]">
                             Edited
                           </span>
@@ -599,23 +599,21 @@ const Chats = () => {
                       </div>
 
                       <div
-                        className={`relative w-full flex ${
-                          msg.senderUserID === currentUserID
-                            ? "justify-end"
-                            : "justify-start"
-                        } group`}
+                        className={`relative w-full flex ${msg.senderUserID === currentUserID
+                          ? "justify-end"
+                          : "justify-start"
+                          } group`}
                       >
                         {/* Dot Menu */}
-                        {!msg.is_deleted && (
+                        {!msg.isDeleted && (
                           <div
                             className={`
               absolute top-1/2 transform -translate-y-1/2
               opacity-0 group-hover:opacity-100 transition-opacity
-              ${
-                msg.senderUserID === currentUserID
-                  ? "left-[-50px]"
-                  : "right-[-50px]"
-              }
+              ${msg.senderUserID === currentUserID
+                                ? "left-[-50px]"
+                                : "right-[-50px]"
+                              }
             `}
                           >
                             <MessageOptions
@@ -633,26 +631,28 @@ const Chats = () => {
                         <div
                           className={`
             p-3 rounded-2xl text-sm shadow-md max-w-[100%] break-words
-            ${
-              msg.senderUserID === currentUserID
-                ? "bg-[var(--color-overlay-light)] text-white rounded-br-none"
-                : "bg-white text-black rounded-bl-none"
-            }
+            ${msg.senderUserID === currentUserID
+                              ? "bg-[var(--color-overlay-light)] text-white rounded-br-none"
+                              : "bg-white text-black rounded-bl-none"
+                            }
           `}
                         >
-                          {msg.is_deleted ? (
+                          {msg.isDeleted ? (
                             <span
-                              className={`italic ${
-                                msg.senderUserID === currentUserID
-                                  ? "text-white/60"
-                                  : "text-gray-400"
-                              }`}
+                              className={`italic ${msg.senderUserID === currentUserID
+                                ? "text-white/60"
+                                : "text-gray-400"
+                                }`}
                             >
                               This message was deleted
                             </span>
                           ) : (
                             <div>
-                              {highlightText(msg.messageText, searchQuery)}
+                              {highlightText(
+                                msg.messageText,
+                                searchQuery,
+                                filteredIndexes[searchIndex] === index
+                              )}
                             </div>
                           )}
                         </div>
