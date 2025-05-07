@@ -1,6 +1,8 @@
 import React from "react";
 import DirectMessageList from "./DirectMessageList";
 import GroupMessageList from "./GroupMessageList";
+import { useState } from "react";
+import CreateChatModal from "./modals/CreateChatModal";
 
 // React icons
 import { FaPlus, FaSearch } from "react-icons/fa";
