@@ -221,7 +221,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     }
 
     const responseData = {
-      projectData: projectOverview,
+      projectData: projectOverviewData,
       userRole: userRole,
       userID: userID,
     };

@@ -45,15 +45,29 @@ const ProjectDetails = () => {
           method: 'GET',
           headers: headers
         });
+
+        const analyticsResponse = await fetch(`/api/project/${projectId}/analytics`, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (!analyticsResponse.ok) {
+          throw new Error(`Failed to fetch analytics: ${analyticsResponse.status}`);
+        }
+        
+        const analyticsData = await analyticsResponse.json();
+
   
         if (!response.ok) {
           throw new Error(`Failed to fetch project: ${response.status}`);
         }
+        
   
         const responseData = await response.json();
   
         // Extract project data from responseData
         const { project, userRole, userID } = responseData;
+        console.log(analyticsData);
   
         setProject(project);
   
@@ -63,6 +77,7 @@ const ProjectDetails = () => {
           const dueDate = project.dueDate ? new Date(project.dueDate) : new Date();
           const today = new Date();
           
+
 
           //Sawan Update Data Here
           setMetrics({
