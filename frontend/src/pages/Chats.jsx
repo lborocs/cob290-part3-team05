@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
 // Components
-import LeftSidebar from "../components/chats/LeftSideBar";
+import LeftSidebar from "../components/chats/LeftSidebar";
 import RightSidebar from "../components/chats/RightSidebar";
 import MessageOptions from "../components/chats/MessageOptions";
 import ChatActionsMenu from "../components/chats/ChatActionsMenu";
