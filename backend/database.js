@@ -81,6 +81,30 @@ export async function getAllTasksByProject(id) {
   };
 }
 
+export async function getBurnDownData(id) {
+  const [rows] = await pool.query(
+    `
+      SELECT 
+      DATE(t.completionDate) AS date,
+      COUNT(t.taskID) AS count,
+      SUM(t.manHours) AS hours
+  FROM 
+      tasks t
+  WHERE 
+      t.projectID = ? -- Replace with your project ID parameter
+      AND t.status = 'Completed'
+      AND t.completionDate IS NOT NULL
+  GROUP BY 
+      DATE(t.completionDate)
+  ORDER BY 
+      date ASC;
+  `,
+    [id]
+  );
+
+  return rows;
+}
+
 export async function getTotalTasksByProject(id) {
   const [rows] = await pool.query(
     `

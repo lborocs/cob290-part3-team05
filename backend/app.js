@@ -22,6 +22,7 @@ import {
   getAllTasksByProject,
   getTotalTasksByProject,
   getUserTasksProject,
+  getBurnDownData,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -228,6 +229,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     const doughnutData = await getAllTasksByProject(id);
     const totalTasks = await getTotalTasksByProject(id);
     const taskPerUser = await getUserTasksProject(id);
+    const burndownData = await getBurnDownData(id);
 
     const responseData = {
       projectData: projectOverviewData,
@@ -236,6 +238,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
       doughnutData: doughnutData,
       totalTasks: totalTasks,
       taskPerUser: taskPerUser,
+      burndownData: burndownData,
     };
 
     res.send(responseData);

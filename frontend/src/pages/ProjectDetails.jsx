@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import BurndownChart from '../components/analytics/chart/BurndownChart'; 
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
@@ -23,6 +24,7 @@ const ProjectDetails = () => {
     daysToDeadline: 0,
     doughnutData: {},
     taskPerUser: [],
+    burndownData : [],
   });
 
   useEffect(() => {
@@ -92,7 +94,7 @@ const ProjectDetails = () => {
             daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
             doughnutData: analyticsData.doughnutData || 0,
             taskPerUser: analyticsData.taskPerUser || [],
-            
+            burndownData: analyticsData.burndownData || [],
           });
         }
   
@@ -155,18 +157,14 @@ const ProjectDetails = () => {
 };
 
 
-  // Chart data for budget usage
-  const budgetData = {
-    labels: ['Used', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.budgetUsed, metrics.budgetTotal - metrics.budgetUsed],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+  // Sample data for burndown chart
+  const sampleCompletionData = [
+    { date: '2025-04-05', count: 1 },  // 1 task completed on April 5
+    { date: '2025-04-12', count: 1 },  // 1 more task completed on April 12
+    { date: '2025-04-20', count: 2 }   // 2 more tasks completed on April 20
+  ];
+
+  
 
   // Chart options
   const chartOptions = {
@@ -397,14 +395,21 @@ const ProjectDetails = () => {
       
       {/* Additional Project Info */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Budget Allocation</h2>
-          </div>
-          <div className="p-4 h-64 flex items-center justify-center">
-            <Doughnut data={budgetData} options={chartOptions} />
-          </div>
+        {/* Burndown Chart */}
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6 col-span-full">
+        <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+          <h2 className="text-lg font-semibold text-[#1C2341]">Project Burndown</h2>
+          <p className="text-sm text-[#2E3944]">Task completion progress over time</p>
         </div>
+        <div className="p-4 h-80">
+        <BurndownChart 
+        startDate={project.startDate}
+        dueDate={project.dueDate}
+        totalTasks={metrics.tasksTotal}
+        completedTasksByDate={metrics.burndownData}
+      />
+        </div>
+      </div>
         
         <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
@@ -432,6 +437,8 @@ const ProjectDetails = () => {
         </div>
       </div>
     </div>
+
+    
   );
 };
 
