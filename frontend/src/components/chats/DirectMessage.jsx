@@ -9,7 +9,6 @@ const DirectMessage = ({
   onClick,
   isActive,
 }) => {
-  console.log(isActive);
   return (
     <button
       className={`flex items-center min-w-full ${

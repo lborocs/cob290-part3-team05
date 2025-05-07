@@ -10,8 +10,6 @@ const GroupMessage = ({
   isActive,
   chatID,
 }) => {
-  console.log(isActive);
-  console.log("chatID", chatID);
   return (
     <button
       className={`flex items-center min-w-full ${
