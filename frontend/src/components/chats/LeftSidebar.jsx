@@ -16,6 +16,7 @@ const LeftSidebar = ({
   chatID,
   createChat,
   handleChangeChat,
+  currentUserID,
 }) => {
   const directMessages = chats.filter((chat) => chat.chatType === "Private");
   const groupMessages = chats.filter((chat) => chat.chatType === "Group");
@@ -101,7 +102,11 @@ const LeftSidebar = ({
         )}
       </div>
       {isCreateChatOpen && (
-        <CreateChatModal onCancel={() => setIsCreateChatOpen(false)} />
+        <CreateChatModal
+          onCancel={() => setIsCreateChatOpen(false)}
+          currentUserID={currentUserID}
+          onCreateChat={createChat}
+        />
       )}
     </div>
   );

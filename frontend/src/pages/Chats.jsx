@@ -420,6 +420,24 @@ const Chats = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Create a chat
+  const createChat = async (chatData) => {
+    console.log(chatData);
+    try {
+      const res = await fetch(`/api/chats`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          body: JSON.stringify(chatData),
+        },
+      });
+
+      if (!res.ok) throw new Error("Error whilst creating chat");
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full">
       {/* Left Sidebar */}
@@ -431,7 +449,9 @@ const Chats = () => {
         chats={chats}
         setChatID={setChatID}
         chatID={chatID}
+        createChat={createChat}
         handleChangeChat={handleChangeChat}
+        currentUserID={currentUserID}
       />
 
       {/* Middle Section */}

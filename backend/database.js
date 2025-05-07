@@ -339,7 +339,7 @@ export async function updateGroupTitle(chatID, newTitle) {
 export async function createChat(chatName, chatType, creatorID, userIDList) {
     if (chatType == "Private") {
         const [userA, userB] = userIDList;
-        const [existingChats] = await pool.query(
+        const [existing] = await pool.query(
             `SELECT cu1.chatID FROM ChatUsers cu1
              JOIN ChatUsers cu2 ON cu1.chatID = cu2.chatID
              JOIN Chats c ON c.chatID = cu1.chatID
@@ -353,11 +353,27 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
             return { chatID: existing[0].chatID, alreadyExists: true };
         }
     }
-    const [result] = await pool.query(
+    const [chat] = await pool.query(
         `INSERT INTO Chats (chatName,chatType,creatorID) VALUES (?,?,?)`,
         [chatName, chatType, creatorID]
     )
-    const chatID = result.insertId;
+    const chatID = chat.insertId;
+
+    const [creatorName]= await pool.query(
+        `SELECT firstName, lastName
+        FROM users
+        WHERE userID = ?
+        `,
+        [creatorID]
+    )
+    const creator = creatorName[0];
+    const fullName = `${creator.firstName} ${creator.lastName}`;
+    const systemMessage = `${fullName} created a chat`;
+
+    const [result] = await pool.query(
+        `INSERT INTO MessagesTable (chatID, senderUserID, messageText, timestamp) VALUES (?, 0, ?, NOW())`,
+        [chatID, systemMessage]
+    );
 
     for (const userID of userIDList) {
         await pool.query(
@@ -365,7 +381,59 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
             [chatID, userID]
         )
     }
+
+    return { chatID, alreadyExists: false, systemMessage };
 }
+
+// GET /users/not-in-private-with/:userID
+export async function getUsersNotInPrivateWith(userID){
+    const [userChats]= await pool.query(
+        `SELECT c.chatID 
+        FROM Chats c
+        JOIN ChatUsers cu ON cu.chatID = c.chatID
+        WHERE cu.userID = ? AND c.chatType = 'Private'
+        `,
+        [userID]
+    )
+
+    const chatIDs = userChats.map(chat => chat.chatID);
+
+    if (chatIDs.length === 0) {
+        const [users] = await pool.query(
+          `SELECT userID FROM Users WHERE userID != ?`,
+          [userID]
+        );
+        return users;
+    }
+
+    const [users] = await pool.query(
+    `SELECT u.userID, u.firstName, u.lastName
+     FROM Users u
+     WHERE u.userID != ?
+        AND u.userID NOT IN (
+        SELECT cu.userID
+        FROM ChatUsers cu
+        WHERE cu.chatID IN (?)
+        )
+        AND u.userID != 0
+         `,
+    [userID, [chatIDs]]
+    );
+
+    return users;
+}
+
+// GET /users/not-current/:userID
+export async function getUsersNotCurrent(userID){
+    const [users] = await pool.query(
+        `SELECT userID, firstName, lastName
+        FROM Users
+        WHERE userID != ? AND userID != 0`,
+        [userID]
+    )
+    return users
+}
+
 
 // Project functions
 export async function getProjects() {

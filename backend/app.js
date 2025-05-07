@@ -20,7 +20,9 @@ import {
   getNonMembers,
   addMemberToGroup,
   deleteChat,
-  createChat
+  createChat,
+  getUsersNotInPrivateWith,
+  getUsersNotCurrent
 } from './database.js';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -335,18 +337,44 @@ app.post("/chats/:chatID/members", async (req, res) => {
 });
 
 app.post("/chats", async (req, res) => {
-  const { chatName, chatType, creatorID, userIDList } = req.body
+  const { chatName, chatType, creatorID, userIDList } = req.body;
 
   try {
-    const systemMessage = await createChat(chatName, chatType, creatorID, userIDList)
+    const { chatID, alreadyExists, systemMessage } = await createChat(chatName, chatType, creatorID, userIDList);
 
-    console.log("Emitting system message:", systemMessage)
-    io.emit("receiveMessage", systemMessage)
+    if (systemMessage) {
+      console.log("Emitting system message:", systemMessage);
+      io.emit("receiveMessage", systemMessage);
+    }
 
-    res.status(200).json({ success: true })
+    res.status(200).json({ success: true, chatID, alreadyExists });
   } catch (err) {
-    console.error("Error creating chat", err)
-    res.status(500).json({ error: "Failed to create chat" })
+    console.error("Error creating chat", err);
+    res.status(500).json({ error: "Failed to create chat" });
+  }
+});
+
+app.get("/users/not-in-private-with/:userID", async (req, res) => {
+  const { userID } = req.params
+
+  try {
+    const users = await getUsersNotInPrivateWith(userID)
+    res.json(users)
+  } catch(err) {
+    console.error("Error fetching users", err)
+    res.status(500).json({ error: "Failed to fetch users" })
+  }
+})
+
+app.get("/users/not-current/:userID", async (req, res) => {
+  const { userID } = req.params
+
+  try {
+    const users = await getUsersNotCurrent(userID)
+    res.json(users)
+  } catch(err) {
+    console.error("Error fetching users", err)
+    res.status(500).json({ error: "Failed to fetch users" })
   }
 })
 
