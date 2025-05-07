@@ -6,6 +6,43 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
   const [chatTitle, setChatTitle] = useState("");
   const [chatType, setChatType] = useState("Private");
   const [selectedUsers, setSelectedUsers] = useState([]);
+
+  const customSelectStyles = {
+    control: (provided) => ({
+      ...provided,
+      backgroundColor: 'white',
+      borderColor: '#e2e8f0',
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: 'white',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected ? '#4a5568' : state.isFocused ? '#edf2f7' : 'white',
+      color: state.isSelected ? 'white' : '#1a202c',
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#edf2f7',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: '#1a202c',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: '#1a202c',
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#a0aec0',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: '#1a202c',
+    }),
+  };
   
   // Mock users till tied to demonstration 
   const [availableUsers, setAvailableUsers] = useState([
@@ -131,6 +168,7 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
               isMulti
               value={selectedUsers}
               onChange={handleSelectChange}
+              styles={customSelectStyles}
               placeholder="Select one or more users"
               className="mb-4 "
             />
