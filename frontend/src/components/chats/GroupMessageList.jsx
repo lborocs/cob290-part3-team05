@@ -4,8 +4,6 @@ import GroupMessage from "./GroupMessage";
 const GroupMessageList = (props) => {
   const groupMessages = props.messages;
   const currentChatID = props.chatID;
-  console.log("Prop", props.chatID);
-  console.log("Curr", currentChatID);
   return (
     <div className="p-4">
       {groupMessages?.length > 0 ? (
