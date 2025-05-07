@@ -56,6 +56,48 @@ export async function getGanttChartData(id) {
   return rows;
 }
 
+export async function getAllTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'in progress' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN dueDate < CURDATE() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+    `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return {
+    toDo: rows[0]?.toDo || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    completed: rows[0]?.completed || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
+export async function getTotalTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(*) AS totalTasks
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+  `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return rows[0]?.totalTasks || 0;
+}
+
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
@@ -213,9 +255,16 @@ export async function getDoughnutData(userID) {
 export async function getProjectData(id) {
   const [rows] = await pool.query(
     `
-    SELECT *
-    FROM Projects
-    WHERE projectID = ?
+    SELECT 
+      p.*,
+      CONCAT(u.firstName, ' ', u.lastName) AS leaderName,
+      u.userEmail AS leaderEmail
+    FROM 
+      Projects p
+    LEFT JOIN 
+      Users u ON p.projectLeader = u.userID
+    WHERE 
+      p.projectID = ?
   `,
     [id]
   );

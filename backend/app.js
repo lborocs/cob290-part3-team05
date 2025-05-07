@@ -19,6 +19,8 @@ import {
   getNumTasksProj,
   getRecentActivityUser,
   getGanttChartData,
+  getAllTasksByProject,
+  getTotalTasksByProject,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -197,6 +199,7 @@ app.get("/project/:id", authenticateToken, async (req, res) => {
   }
 });
 
+//Project Analytics
 app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
   try {
     const userRole = req.user.userType;
@@ -220,10 +223,16 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
+    //Sawan Here
+    const doughnutData = await getAllTasksByProject(id);
+    const totalTasks = await getTotalTasksByProject(id);
+
     const responseData = {
       projectData: projectOverviewData,
       userRole: userRole,
       userID: userID,
+      doughnutData: doughnutData,
+      totalTasks: totalTasks,
     };
 
     res.send(responseData);
@@ -232,6 +241,8 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error while fetching project" });
   }
 });
+
+// Project Analytics
 
 app.post("/login", async (req, res) => {
   try {

@@ -20,7 +20,8 @@ const ProjectDetails = () => {
     budgetTotal: 0,
     teamMembers: 0,
     daysSinceStart: 0,
-    daysToDeadline: 0
+    daysToDeadline: 0,
+    doughnutData: {},
   });
 
   useEffect(() => {
@@ -55,7 +56,7 @@ const ProjectDetails = () => {
           throw new Error(`Failed to fetch analytics: ${analyticsResponse.status}`);
         }
         
-        const analyticsData = await analyticsResponse.json();
+        
 
   
         if (!response.ok) {
@@ -64,11 +65,13 @@ const ProjectDetails = () => {
         
   
         const responseData = await response.json();
+        const analyticsData = await analyticsResponse.json();
   
         // Extract project data from responseData
         const { project, userRole, userID } = responseData;
-        console.log(analyticsData);
-  
+        
+        console.log('Project data:', project);
+
         setProject(project);
   
         // Calculate metrics from the project data
@@ -81,13 +84,13 @@ const ProjectDetails = () => {
 
           //Sawan Update Data Here
           setMetrics({
-            tasksCompleted: Math.floor(Math.random() * 40) + 10, // Replace with actual task data
-            tasksTotal: Math.floor(Math.random() * 30) + 40, // Replace with actual task data
-            budgetUsed: Math.floor(Math.random() * 50000) + 10000, // Replace with actual budget data
-            budgetTotal: 100000, // Replace with actual budget data
-            teamMembers: Math.floor(Math.random() * 8) + 3, // Replace with actual team data
+            tasksCompleted: analyticsData.doughnutData.completed || 0,
+            tasksTotal: analyticsData.totalTasks || 0,
+            teamMembers: 10,
             daysSinceStart: Math.floor((today - startDate) / (1000 * 60 * 60 * 24)),
-            daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24))
+            daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
+            doughnutData: analyticsData.doughnutData || 0
+            
           });
         }
   
@@ -136,18 +139,19 @@ const ProjectDetails = () => {
     }
   };
 
-  // Chart data for tasks progress
-  const tasksData = {
-    labels: ['Completed', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.tasksCompleted, metrics.tasksTotal - metrics.tasksCompleted],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+ // Doughnut Chart with improved colors
+ const tasksData = {
+  labels: ['To Do', 'In Progress', 'Completed', 'Overdue'],
+  datasets: [
+    {
+      data: [metrics.doughnutData.toDo, metrics.doughnutData.inProgress, metrics.doughnutData.completed, metrics.doughnutData.overdue],
+      backgroundColor: ['#8e8e91', '#eab385', '#adda9d', '#f5a3a3'], // Colors for each status
+      borderColor: ['#1E6B37', '#D48F07', '#136A8C', '#B02A37'], // Darker shades for 3D effect
+      borderWidth: 1, // Slightly thicker border for better visibility
+    },
+  ],
+};
+
 
   // Chart data for budget usage
   const budgetData = {
@@ -291,7 +295,7 @@ const ProjectDetails = () => {
           </div>
           
           <div className="bg-[#E8C2F4]/10 p-4 rounded-lg shadow-sm">
-            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Budget</div>
+            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Employee</div>
             <div className="text-2xl font-bold text-[#1C2341]">${(metrics.budgetUsed/1000).toFixed(1)}k</div>
             <div className="text-[#2E3944] text-sm mt-1">
               of ${(metrics.budgetTotal/1000).toFixed(1)}k total
@@ -299,10 +303,10 @@ const ProjectDetails = () => {
           </div>
           
           <div className="bg-[#E8C2F4]/10 p-4 rounded-lg shadow-sm">
-            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Team</div>
-            <div className="text-2xl font-bold text-[#1C2341]">{metrics.teamMembers}</div>
+            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Team Lead</div>
+            <div className="text-2xl font-bold text-[#1C2341]">{project.leaderName}</div>
             <div className="text-[#2E3944] text-sm mt-1">
-              <span className="font-medium">Leader:</span> {project.projectLeader}
+              <span className="font-medium">Contact:</span> {project.leaderEmail}
             </div>
           </div>
         </div>
