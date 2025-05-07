@@ -21,6 +21,7 @@ import {
   getGanttChartData,
   getAllTasksByProject,
   getTotalTasksByProject,
+  getUserTasksProject,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -226,6 +227,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     //Sawan Here
     const doughnutData = await getAllTasksByProject(id);
     const totalTasks = await getTotalTasksByProject(id);
+    const taskPerUser = await getUserTasksProject(id);
 
     const responseData = {
       projectData: projectOverviewData,
@@ -233,6 +235,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
       userID: userID,
       doughnutData: doughnutData,
       totalTasks: totalTasks,
+      taskPerUser: taskPerUser,
     };
 
     res.send(responseData);

@@ -22,6 +22,7 @@ const ProjectDetails = () => {
     daysSinceStart: 0,
     daysToDeadline: 0,
     doughnutData: {},
+    taskPerUser: [],
   });
 
   useEffect(() => {
@@ -89,7 +90,8 @@ const ProjectDetails = () => {
             teamMembers: 10,
             daysSinceStart: Math.floor((today - startDate) / (1000 * 60 * 60 * 24)),
             daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
-            doughnutData: analyticsData.doughnutData || 0
+            doughnutData: analyticsData.doughnutData || 0,
+            taskPerUser: analyticsData.taskPerUser || [],
             
           });
         }
@@ -177,37 +179,95 @@ const ProjectDetails = () => {
     }
   };
 
-  // Weekly progress data (sample data)
-  const weeklyProgressData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+  // Task distribution by employee data
+  const taskPerEmployeeData = {
+    labels: metrics.taskPerUser.map((user) => user.employeeName), // Employee names as labels
     datasets: [
       {
-        label: 'Tasks Completed',
-        data: [5, 8, 12, 7, 9, metrics.tasksCompleted - 41], // Sample data - replace with actual
-        backgroundColor: 'rgba(90, 39, 119, 0.7)',
-        barThickness: 20,
+        label: 'To Do',
+        data: metrics.taskPerUser.map((user) => user.toDo), // To Do tasks
+        backgroundColor: '#8e8e91', // Grey
+        borderRadius: 25, // Rounded corners
+        barThickness: 20, // Adjust bar width
+      },
+      {
+        label: 'In Progress',
+        data: metrics.taskPerUser.map((user) => user.inProgress), // In Progress tasks
+        backgroundColor: '#eab385', // Amber
+        borderRadius: 25, // Rounded corners
+        barThickness: 20, // Adjust bar width
+      },
+      {
+        label: 'Completed',
+        data: metrics.taskPerUser.map((user) => user.completed), // Completed tasks
+        backgroundColor: '#adda9d', // Green
+        borderRadius: 25, // Rounded corners
+        barThickness: 20, // Adjust bar width
+      },
+      {
+        label: 'Overdue',
+        data: metrics.taskPerUser.map((user) => user.overdue), // Overdue tasks
+        backgroundColor: '#f5a3a3', // Red
+        borderRadius: 25, // Rounded corners
+        barThickness: 20, // Adjust bar width
       },
     ],
   };
 
-  // Bar chart options
-  const barOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
+    const barOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            font: {
+              size: 14,
+              family: 'Poppins, sans-serif', // Modern font
+            },
+            color: '#1C2341', // Dark text color
+          },
+        },
+        title: {
+          display: true,
+          text: 'Task Distribution by Employee',
+          font: {
+            size: 18,
+            weight: 'bold',
+            family: 'Poppins, sans-serif',
+          },
+          color: '#1C2341',
+        },
       },
-      title: {
-        display: true,
-        text: 'Weekly Progress'
+      scales: {
+        x: {
+          stacked: true, // Stack bars horizontally
+          grid: {
+            display: false, // Hide grid lines for a cleaner look
+          },
+          ticks: {
+            font: {
+              size: 12,
+              family: 'Poppins, sans-serif',
+            },
+            color: '#2E3944',
+          },
+        },
+        y: {
+          stacked: true, // Stack bars vertically
+          beginAtZero: true,
+          grid: {
+            color: '#D9D9D9', // Light grid lines
+          },
+          ticks: {
+            font: {
+              size: 12,
+              family: 'Poppins, sans-serif',
+            },
+            color: '#2E3944',
+          },
+        },
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  };
+    };
 
   if (loading) {
     return (
@@ -296,9 +356,9 @@ const ProjectDetails = () => {
           
           <div className="bg-[#E8C2F4]/10 p-4 rounded-lg shadow-sm">
             <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Employee</div>
-            <div className="text-2xl font-bold text-[#1C2341]">${(metrics.budgetUsed/1000).toFixed(1)}k</div>
+            <div className="text-2xl font-bold text-[#1C2341]">{(metrics.taskPerUser.length)}</div>
             <div className="text-[#2E3944] text-sm mt-1">
-              of ${(metrics.budgetTotal/1000).toFixed(1)}k total
+              total members
             </div>
           </div>
           
@@ -317,10 +377,10 @@ const ProjectDetails = () => {
         {/* Progress Charts */}
         <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] lg:col-span-2">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Weekly Progress</h2>
+            <h2 className="text-lg font-semibold text-[#1C2341]">Task Breakdown</h2>
           </div>
           <div className="p-4 h-64">
-            <Bar options={barOptions} data={weeklyProgressData} />
+            <Bar options={barOptions} data={taskPerEmployeeData} />
           </div>
         </div>
         

@@ -299,6 +299,37 @@ ORDER BY
   return rows;
 }
 
+export async function getUserTasksProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      u.userID,
+      CONCAT(u.firstName, ' ', u.lastName) AS employeeName,
+      u.userEmail,
+      COUNT(t.taskID) AS totalAssigned,
+      COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN t.status = 'to do' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN t.status = 'in progress' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN t.dueDate < CURDATE() AND t.status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Users u
+    JOIN 
+      UserTeams ut ON u.userID = ut.userID
+    LEFT JOIN 
+      Tasks t ON t.assigneeId = u.userID AND t.projectID = ut.projectID
+    WHERE 
+      ut.projectID = ?
+    GROUP BY 
+      u.userID, u.firstName, u.lastName, u.userEmail
+    ORDER BY 
+      completed DESC, totalAssigned DESC
+    `,
+    [id]
+  );
+
+  return rows;
+}
+
 export async function getRecentActivityUser(id) {
   const [rows] = await pool.query(
     `
