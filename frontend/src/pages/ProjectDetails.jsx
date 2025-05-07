@@ -25,6 +25,7 @@ const ProjectDetails = () => {
     doughnutData: {},
     taskPerUser: [],
     burndownData : [],
+    recentActivity: []
   });
 
   useEffect(() => {
@@ -95,6 +96,7 @@ const ProjectDetails = () => {
             doughnutData: analyticsData.doughnutData || 0,
             taskPerUser: analyticsData.taskPerUser || [],
             burndownData: analyticsData.burndownData || [],
+            recentActivity: analyticsData.recentActivityProject || []
           });
         }
   
@@ -393,50 +395,75 @@ const ProjectDetails = () => {
         </div>
       </div>
       
-      {/* Additional Project Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Additional Project Info */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Burndown Chart */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6 col-span-full">
-        <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-          <h2 className="text-lg font-semibold text-[#1C2341]">Project Burndown</h2>
-          <p className="text-sm text-[#2E3944]">Task completion progress over time</p>
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6">
+          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+            <h2 className="text-lg font-semibold text-[#1C2341]">Project Burndown</h2>
+            <p className="text-sm text-[#2E3944]">Task completion progress over time</p>
+          </div>
+          <div className="p-4 h-80">
+            <BurndownChart 
+              startDate={project.startDate}
+              dueDate={project.dueDate}
+              totalTasks={metrics.tasksTotal}
+              completedTasksByDate={metrics.burndownData}
+            />
+          </div>
         </div>
-        <div className="p-4 h-80">
-        <BurndownChart 
-        startDate={project.startDate}
-        dueDate={project.dueDate}
-        totalTasks={metrics.tasksTotal}
-        completedTasksByDate={metrics.burndownData}
-      />
-        </div>
-      </div>
         
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+        {/* Recent Activities - Full width and below burndown chart */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
             <h2 className="text-lg font-semibold text-[#1C2341]">Recent Activities</h2>
           </div>
-          <div className="p-4 divide-y divide-[#D9D9D9]">
-            {/* Sample activities - replace with actual activity data */}
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">New task added</div>
-              <div className="text-xs text-[#2E3944]">Yesterday at 3:45 PM</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Budget updated</div>
-              <div className="text-xs text-[#2E3944]">2 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Team member added</div>
-              <div className="text-xs text-[#2E3944]">3 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Milestone completed</div>
-              <div className="text-xs text-[#2E3944]">5 days ago</div>
-            </div>
+          <div className="p-4 divide-y divide-[#D9D9D9] h-64 overflow-y-auto">
+            {/* Show actual activity data from API */}
+            {metrics.recentActivity && metrics.recentActivity.length > 0 ? (
+              metrics.recentActivity.map((activity, index) => (
+                <div className="py-3" key={`activity-${index}`}>
+                  <div className="text-sm font-medium text-[#1C2341]">
+                    {activity.assigneeName && <span className="text-[#5A2777]">{activity.assigneeName}</span>}
+                    {' '}
+                    {activity.activityType.toLowerCase()}
+                    {activity.taskName && <span className="font-medium">{' '}{activity.taskName}</span>}
+                  </div>
+                  <div className="text-xs text-[#2E3944] mt-1">
+                    <span>
+                      {activity.daysAgo === 0 ? 'Today' : 
+                      activity.daysAgo === 1 ? 'Yesterday' : 
+                      `${activity.daysAgo} days ago`}
+                    </span>
+                    {activity.taskStatus && <span className="ml-1">• Status: {activity.taskStatus}</span>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Fallback to sample data if no API data available
+              <>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">New task added</div>
+                  <div className="text-xs text-[#2E3944]">Yesterday at 3:45 PM</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Budget updated</div>
+                  <div className="text-xs text-[#2E3944]">2 days ago</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Team member added</div>
+                  <div className="text-xs text-[#2E3944]">3 days ago</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Milestone completed</div>
+                  <div className="text-xs text-[#2E3944]">5 days ago</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </div>
+      </div>
 
     
   );

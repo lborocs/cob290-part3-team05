@@ -23,6 +23,7 @@ import {
   getTotalTasksByProject,
   getUserTasksProject,
   getBurnDownData,
+  getRecentActivityProject,
 } from "./database.js";
 
 //import loginRoutes from "./routes/login.js";
@@ -230,6 +231,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     const totalTasks = await getTotalTasksByProject(id);
     const taskPerUser = await getUserTasksProject(id);
     const burndownData = await getBurnDownData(id);
+    const recentActivityProject = await getRecentActivityProject(id);
 
     const responseData = {
       projectData: projectOverviewData,
@@ -239,6 +241,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
       totalTasks: totalTasks,
       taskPerUser: taskPerUser,
       burndownData: burndownData,
+      recentActivityProject: recentActivityProject,
     };
 
     res.send(responseData);

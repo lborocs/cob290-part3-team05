@@ -122,6 +122,53 @@ export async function getTotalTasksByProject(id) {
   return rows[0]?.totalTasks || 0;
 }
 
+export async function getRecentActivityProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      t.name AS taskName,
+      t.status AS taskStatus,
+      t.assigneeID,
+      CONCAT(u.firstName, ' ', u.lastName) AS assigneeName,
+      CASE
+        WHEN t.status = 'Completed' THEN t.completionDate
+        WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+        ELSE NULL
+      END AS activityDate,
+      CASE
+        WHEN t.status = 'Completed' THEN 'Task completed'
+        WHEN t.status = 'In Progress' THEN 'Task in progress'
+        WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN 'Task started'
+        ELSE NULL
+      END AS activityType,
+      ABS(DATEDIFF(CURDATE(), 
+        CASE
+          WHEN t.status = 'Completed' THEN t.completionDate
+          WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+          ELSE CURDATE()
+        END
+      )) AS daysAgo
+    FROM 
+      tasks t
+    LEFT JOIN
+      Users u ON t.assigneeID = u.userID
+    WHERE 
+      t.projectID = ?
+      AND (
+        (t.status = 'Completed' AND t.completionDate IS NOT NULL)
+        OR 
+        (t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE())
+      )
+    ORDER BY 
+      daysAgo ASC, 
+      FIELD(t.status, 'Completed', 'In Progress', 'To Do') ASC
+    LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)

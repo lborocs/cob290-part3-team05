@@ -68,7 +68,7 @@ const BurndownChart = ({ startDate, dueDate, totalTasks, completedTasksByDate = 
   const calculateActualLine = () => {
     const actualData = Array(labels.length).fill(null);
     
-    s
+    
     let remaining = totalTasks;
     actualData[0] = remaining;
     
