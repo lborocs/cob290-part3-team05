@@ -189,7 +189,7 @@ app.get("/project/:id", authenticateToken, async (req, res) => {
     const userID = req.user.id;
 
     //Check permission of they can see the project data or not
-    if (userRole !== "admin" && userRole !== "manager") {
+    if (userRole !== "System" && userRole !== "Manager") {
       const hasAccess = await isLeadingProject(userID, id);
       if (!hasAccess) {
         return res.status(403).json({
@@ -225,7 +225,7 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
     const userID = req.user.id;
 
     //Check permission of they can see the project data or not
-    if (userRole !== "admin" && userRole !== "manager") {
+    if (userRole !== "System" && userRole !== "Manager") {
       const hasAccess = await isLeadingProject(userID, id);
       if (!hasAccess) {
         return res.status(403).json({
