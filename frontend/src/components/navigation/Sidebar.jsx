@@ -159,7 +159,6 @@ export const Sidebar = () => {
             })}
           </div>
         </nav>
-
         <div className="flex flex-col mt-auto mb-[3rem] items-center gap-[.5rem] justify-end">
           {/* Sign Out Button */}
           <SidebarButton

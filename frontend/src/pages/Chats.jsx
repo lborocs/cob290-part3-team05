@@ -1,314 +1,784 @@
 import React, { useState, useEffect, useRef } from "react";
-import { io } from "socket.io-client";
+
+// Components
+import LeftSidebar from "../components/chats/LeftSidebar";
+import RightSidebar from "../components/chats/RightSidebar";
+import MessageOptions from "../components/chats/MessageOptions";
+import ChatActionsMenu from "../components/chats/ChatActionsMenu";
+import SearchBar from "../components/chats/SearchBar";
+import RenameGroupModal from "../components/chats/modals/RenameGroupModal";
+import ConfirmModal from "../components/chats/modals/ConfirmModal";
+import AddMemberModal from "../components/chats/modals/AddMemberModal";
+import MessageInput from "../components/chats/MessageInput";
 
 // React icons
-import {
-  FaPlus,
-  FaPaperPlane,
-  FaSearch,
-  FaPencilAlt,
-  FaEllipsisH,
-} from "react-icons/fa";
+import { FaPencilAlt, FaUserAlt, FaCheck, FaTimes } from "react-icons/fa";
 import { TiUserAdd } from "react-icons/ti";
 import {
   TbLayoutSidebarRightCollapseFilled,
   TbLayoutSidebarLeftCollapseFilled,
 } from "react-icons/tb";
-import { GoPaperclip } from "react-icons/go";
-import { MdOutlineEmojiEmotions } from "react-icons/md";
+
+// WebSocket connection to backend
+import { io } from "socket.io-client";
+import { EditMessage } from "../components/chats/chat-middle-components/EditMessage";
+import { jwtDecode } from "jwt-decode";
+
+// Initial WebSocket connection
+const socket = io("http://localhost:8080", {
+  transports: ["websocket", "polling"],
+  path: "/socket.io",
+  withCredentials: true,
+});
 
 const Chats = () => {
-  const [activeTab, setActiveTab] = useState("direct"); // Tracks active tab (Direct or Groups)
-  const [searchTerm, setSearchTerm] = useState(""); // Search input state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Controls sidebar visibility
-  const [isNotificationsOn, setIsNotificationsOn] = useState(false); // Notifications toggle state
+  // Config
 
+  const token = localStorage.getItem("token");
+  const decodedToken = jwtDecode(token);
+  const currentUserID = decodedToken.id;
+  const currentUserName = decodedToken.firstName;
+
+  // UI state
+  const [activeTab, setActiveTab] = useState("direct");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNotificationsOn, setIsNotificationsOn] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // Chat UI related state
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIndex, setSearchIndex] = useState(0);
+  const [filteredIndexes, setFilteredIndexes] = useState([]);
+
+  // Chat data state
+  const [chats, setChats] = useState([]);
+  const [noChats, setNoChats] = useState(false);
+  const [chatTitle, setChatTitle] = useState("Loading...");
+  const [chatType, setChatType] = useState(null);
+  const [chatID, setChatID] = useState(null);
+  const [creatorID, setCreatorID] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  const socket = useRef(null);
+  // Message editing state
+  const [editingMessageID, setEditingMessageID] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [messageToDelete, setMessageToDelete] = useState(null);
+
+  // Group management state
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [nonMembers, setNonMembers] = useState([]);
+  const [isDeleteChatModalOpen, setIsDeleteChatModalOpen] = useState(false);
+
+  // Typing users state
+  const [typingUsers, setTypingUsers] = useState({});
+
+  const messagesEndRef = useRef(null);
+
+  // Handle emoji picker
+  const handleEmojiClick = (emojiObject) => {
+    setNewMessage((prev) => prev + emojiObject.emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Just now";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const highlightText = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <span key={i} className="bg-pink-400 px-0.5 rounded">
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+  };
+
+  const handleChangeChat = async (chatID) => {
+    if (chatID === null) {
+      setNoChats(true);
+    } else {
+      setNoChats(false);
+      const selectedChat = chats.find((chat) => chat.chatID === chatID);
+      console.log(selectedChat);
+      setChatID(chatID);
+      console.log(selectedChat.chatTitle);
+      setChatTitle(selectedChat.chatTitle);
+      setChatType(selectedChat.chatType);
+    }
+  };
+
+  const handleRenameGroup = async (newTitle) => {
+    try {
+      const res = await fetch(`/api/chats/${chatID}/title`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newTitle }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update title");
+
+      setChatTitle(newTitle);
+    } catch (err) {
+      console.error("Rename error:", err);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    try {
+      const res = await fetch(`/api/chats/${chatID}/leave/${currentUserID}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        let errorText = "Failed to leave group";
+
+        try {
+          const body = await res.json();
+          errorText = body.error || errorText;
+
+          if (errorText.includes("delete the chat")) {
+            setIsLeaveModalOpen(false);
+            setIsDeleteChatModalOpen(true);
+            return;
+          }
+        } catch (jsonErr) {
+          console.warn("Could not parse JSON error body", jsonErr);
+        }
+
+        throw new Error(errorText);
+      }
+
+      setChats((prev) => prev.filter((chat) => chat.chatID !== chatID));
+      setChatID(null);
+      setChatTitle("Select a chat");
+      setMessages([]);
+    } catch (err) {
+      console.error("Failed to leave group:", err.message);
+      alert(err.message);
+    }
+  };
+
+  const fetchNonMembers = async () => {
+    try {
+      const res = await fetch(`/api/chats/${chatID}/non-members`);
+      const data = await res.json();
+      setNonMembers(data);
+    } catch (err) {
+      console.error("Failed to fetch non-members:", err);
+    }
+  };
+
+  const handleAddMember = async (userIDToAdd) => {
+    try {
+      const res = await fetch(`/api/chats/${chatID}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userID: userIDToAdd }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add user to group");
+      socket.emit("joinChat", chatID);
+      fetchNonMembers();
+    } catch (err) {
+      console.error("Failed to add user:", err);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || isSending) return;
+    setIsSending(true);
+
+    const messageData = {
+      senderUserID: currentUserID,
+      chatID,
+      messageText: newMessage.trim(),
+    };
+
+    try {
+      const response = await fetch(`/api/chats/${chatID}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(messageData),
+      });
+      if (!response.ok) throw new Error("Failed to send message");
+
+      const savedMessage = await response.json();
+      socket.emit("sendMessage", savedMessage);
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageID) => {
+    try {
+      const res = await fetch(`/api/messages/${messageID}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.messageID === messageID ? { ...msg, is_deleted: true } : msg
+          )
+        );
+      } else {
+        console.error("Failed to delete message");
+      }
+    } catch (err) {
+      console.error("Error deleting message:", err);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    try {
+      const res = await fetch(`/api/chats/${chatID}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete chat");
+
+      // Update UI after successful deletion
+      setChats((prev) => prev.filter((chat) => chat.chatID !== chatID));
+      setChatID(null);
+      setChatTitle("Select a chat");
+      setMessages([]);
+    } catch (err) {
+      console.error("Error deleting chat:", err);
+      alert("Something went wrong while deleting the chat.");
+    }
+  };
+
+  const handleEditMessage = async () => {
+    if (!editText.trim() || !editingMessageID) return;
+
+    try {
+      const response = await fetch(`/api/messages/${editingMessageID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newText: editText }),
+      });
+
+      if (!response.ok) throw new Error("Failed to edit message");
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.messageID === editingMessageID
+            ? { ...msg, messageText: editText, is_edited: true }
+            : msg
+        )
+      );
+
+      setEditingMessageID(null);
+      setEditText("");
+    } catch (error) {
+      console.error("Error editing message:", error);
+    }
+  };
+
+  const textareaRef = useRef(null);
 
   useEffect(() => {
-    socket.current = io("http://127.0.0.1:8080", {
-      auth: {
-        token: localStorage.getItem("accessToken"),
-      },
-    });
+    if (editingMessageID && textareaRef.current) {
+      const el = textareaRef.current;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  }, [editingMessageID, editText]);
 
-    socket.current.on("new_message", (msg) => {
-      console.log("New message received:", msg);
-      setMessages((prev) => [...prev, msg]);
+  // WebSocket connection
+  useEffect(() => {
+    // Connection status listeners
+    const onConnect = () => {
+      socket.emit("joinChat", chatID);
+    };
+
+    const onDisconnect = () => {};
+
+    const onConnectError = (err) => {
+      console.error("Connection error:", err.message);
+      setTimeout(() => socket.connect(), 1000);
+    };
+
+    const onReceiveMessage = (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+      scrollToBottom();
+    };
+
+    // Set up all listeners
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
+    socket.on("receiveMessage", onReceiveMessage);
+
+    // Initialise connection
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      socket.emit("joinChat", chatID);
+    }
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
+      socket.off("receiveMessage", onReceiveMessage);
+    };
+  }, [chatID]); // Only re-run when chatID changes
+
+  useEffect(() => {
+    socket.on("userTyping", ({ chatID: typingChatID, userID }) => {
+      if (typingChatID !== chatID || userID === currentUserID) return;
+
+      setTypingUsers((prev) => ({
+        ...prev,
+        [userID]: true,
+      }));
+
+      setTimeout(() => {
+        setTypingUsers((prev) => {
+          const updated = { ...prev };
+          delete updated[userID];
+          return updated;
+        });
+      }, 3000); // Clear after 3 seconds
     });
 
     return () => {
-      socket.current.disconnect();
+      socket.off("userTyping");
     };
-  }, []);
+  }, [chatID]);
 
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  // Scroll to the relevant message during search
+  useEffect(() => {
+    if (filteredIndexes.length && messagesEndRef.current) {
+      const targetIndex = filteredIndexes[searchIndex];
+      const el = document.getElementById(`msg-${targetIndex}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [searchIndex, filteredIndexes]);
 
-    // Replace with actual selected chat ID if applicable
-    const chatID = 1;
+  // Fetch chat details
+  useEffect(() => {
+    fetch(`/api/chats/${currentUserID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChats(data);
 
-    socket.current.emit("send_message", {
-      chatID,
-      messageText: input.trim(),
-    });
+        // If user has chats, auto-select the first one
+        if (data.length > 0) {
+          setChatID(data[0].chatID);
+          setChatTitle(data[0].chatTitle);
+          setChatType(data[0].chatType);
+          setCreatorID(data[0].creatorID);
+        } else {
+          // No chats available
+          setChatTitle("No chats yet");
+          setChatType(null);
+          setChatID(null);
+        }
+      })
+      .catch((error) => console.error("Error fetching chats:", error));
+  }, [currentUserID]);
 
-    setInput("");
+  useEffect(() => {
+    fetch(`/api/chats/${chatID}/messages`)
+      .then((res) => res.json())
+      .then((data) => setMessages(data))
+      .catch((error) => console.error("Error fetching messages:", error));
+  }, [chatID]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Create a chat
+  const createChat = async (chatData) => {
+    console.log(chatData);
+    try {
+      const res = await fetch(`/api/chats`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chatData),
+      });
+
+      if (!res.ok) throw new Error("Error whilst creating chat");
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+    }
+
+    fetch(`/api/chats/${currentUserID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChats(data);
+
+        // If user has chats, auto-select the first one
+        if (data.length > 0) {
+          setChatID(data[0].chatID);
+          setChatTitle(data[0].chatTitle);
+          setChatType(data[0].chatType);
+          setCreatorID(data[0].creatorID);
+        } else {
+          // No chats available
+          setChatTitle("No chats yet");
+          setChatType(null);
+          setChatID(null);
+        }
+      })
+      .catch((error) => console.error("Error fetching chats:", error));
   };
 
   return (
     <div className="flex h-screen w-full">
       {/* Left Sidebar */}
-      <div
-        className="w-[250px] flex-shrink-0 flex flex-col text-white p-4"
-        style={{ backgroundColor: "var(--color-overlay-light)" }}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Chat</h2>
-          <div
-            className="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
-            style={{ backgroundColor: "var(--color-overlay-dark)" }}
-          >
-            <FaPlus className="text-white w-4 h-4" />
-          </div>
-        </div>
-
-        {/* Tabs (Direct & Groups) */}
-        <div className="flex w-full justify-center pb-1">
-          {["direct", "groups"].map((tab) => (
-            <button
-              key={tab}
-              className={`relative flex-1 text-sm text-center py-1 ${
-                activeTab === tab
-                  ? "font-bold text-white"
-                  : "text-[var(--color-white)]"
-              }`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab.toUpperCase()}
-              {activeTab === tab && (
-                <span className="absolute left-0 bottom-0 w-full h-[4px] bg-[var(--color-highlight)]"></span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Bar */}
-        <div className="mt-3 relative flex items-center">
-          <span className="absolute left-4 text-gray-400">
-            <FaSearch className="w-4 h-4" />
-          </span>
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-9 px-10 text-sm text-gray-600 bg-white rounded-lg shadow-md outline-none focus:ring-2 focus:ring-[var(--color-highlight)]"
-          />
-        </div>
-
-        {/* Chat List */}
-        <div className="mt-4 flex-1 overflow-y-auto space-y-3"></div>
-
-        {/* User Info Section */}
-        <div className="mt-4 flex items-center gap-3 p-3 border-t-[2px] border-white">
-          <div className="w-10 h-10 bg-pink-500 rounded-full"></div>
-          <div>
-            <p className="font-bold text-white">Full Name</p>
-            <p className="text-sm text-gray-300">Role</p>
-          </div>
-        </div>
-      </div>
+      <LeftSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        chats={chats}
+        setChatID={setChatID}
+        chatID={chatID}
+        createChat={createChat}
+        handleChangeChat={handleChangeChat}
+        currentUserID={currentUserID}
+      />
 
       {/* Middle Section */}
       <div className="flex-1 flex flex-col relative bg-[var(--color-highlight)]">
         {/* Header */}
-        <div className="p-4 flex justify-between items-center bg-white">
+        <div className="p-4 flex justify-between items-center bg-white shadow-md">
           <div className="flex items-center gap-3 ml-4">
-            <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-            <h2 className="text-lg font-bold">
-              {activeTab === "direct" ? "Full Name" : "Group Title"}
+            {/* Chat Profile Icon (First Letter of Title) */}
+            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-xl text-white">
+              {chatTitle ? chatTitle.charAt(0).toUpperCase() : "?"}
+            </div>
+
+            {/* Dynamic Chat Title */}
+            <h2 className="text-xl font-bold truncate max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">
+              {chatTitle}
             </h2>
 
-            {activeTab !== "direct" && ( // Shows edit icons only in group chats
-              <FaPencilAlt className="text-[var(--color-overlay-dark)] cursor-pointer" />
+            {/* Edit Icon for Group Chats */}
+            {chatType === "Group" && (
+              <div className="relative">
+                <FaPencilAlt
+                  onClick={() => {
+                    setNewGroupName(chatTitle);
+                    setIsRenameModalOpen(true);
+                  }}
+                  className="cursor-pointer text-[var(--color-overlay-dark)] hover:text-[var(--color-overlay)] transition"
+                />
+                {isRenameModalOpen && (
+                  <RenameGroupModal
+                    currentName={chatTitle}
+                    newName={newGroupName}
+                    setNewName={setNewGroupName}
+                    onCancel={() => setIsRenameModalOpen(false)}
+                    onSave={() => {
+                      handleRenameGroup(newGroupName);
+                      setIsRenameModalOpen(false);
+                    }}
+                  />
+                )}
+              </div>
             )}
           </div>
 
           <div className="flex items-center gap-4 text-[var(--color-overlay-dark)] text-lg mr-4">
-            {activeTab !== "direct" && ( // Only show add members icon when in Groups
-              <TiUserAdd className="cursor-pointer" />
+            {/* Show Add Member Icon Only for Group Chats */}
+            {chatType === "Group" && creatorID === currentUserID && (
+              <TiUserAdd
+                className="cursor-pointer transition-colors duration-200 hover:text-[var(--color-overlay)]"
+                onClick={() => {
+                  fetchNonMembers();
+                  setIsAddMemberOpen(true);
+                }}
+              />
             )}
-            <FaEllipsisH className="cursor-pointer" />
+
+            <ChatActionsMenu
+              chatType={chatType}
+              creatorID={creatorID}
+              currentUserID={currentUserID}
+              onFind={() => {
+                setShowSearchBar(true);
+                setSearchQuery("");
+                setSearchIndex(0);
+                setFilteredIndexes([]);
+              }}
+              onPin={() => console.log("Pin clicked")}
+              onMute={() => console.log("Mute clicked")}
+              onDelete={() => setIsDeleteChatModalOpen(true)}
+              onLeaveGroup={() => setIsLeaveModalOpen(true)}
+            />
 
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               {isSidebarOpen ? (
-                <TbLayoutSidebarLeftCollapseFilled className="cursor-pointer text-2xl" />
+                <TbLayoutSidebarLeftCollapseFilled className="cursor-pointer text-2xl transition-colors duration-200 hover:text-[var(--color-overlay)]" />
               ) : (
-                <TbLayoutSidebarRightCollapseFilled className="cursor-pointer text-2xl" />
+                <TbLayoutSidebarRightCollapseFilled className="cursor-pointer text-2xl transition-colors duration-200 hover:text-[var(--color-overlay)]" />
               )}
             </button>
           </div>
         </div>
 
+        {showSearchBar && (
+          <SearchBar
+            messages={messages}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setFilteredIndexes={setFilteredIndexes}
+            setSearchIndex={setSearchIndex}
+            setShowSearchBar={setShowSearchBar}
+            searchIndex={searchIndex}
+          />
+        )}
+
         {/* Chat Messages */}
-        <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-          <ul>
-            {messages.map((msg, idx) => (
-              <li key={idx} className="bg-white px-4 py-2 rounded-md shadow-sm">
-                <strong>{msg.firstName}:</strong> {msg.messageText}
-              </li>
-            ))}
-          </ul>
+        <div
+          className="flex-1 p-4 space-y-4 overflow-y-auto"
+          style={{
+            maxHeight: "calc(100vh - 160px)",
+            paddingRight: "10%",
+            paddingLeft: "10%",
+          }}
+        >
+          <div className="flex flex-col w-full max-w-3xl mx-auto space-y-2">
+            {messages.map((msg, index) => {
+              return msg.senderUserID === 0 ? (
+                <div
+                  key={`system-${index}`}
+                  className="w-full text-center text-xs text-gray-400 my-2"
+                >
+                  {msg.messageText}
+                </div>
+              ) : (
+                <div
+                  id={`msg-${index}`}
+                  key={msg.messageID || `${msg.senderUserID}-${index}`}
+                  className={`flex items-center ${
+                    msg.senderUserID === currentUserID
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
+                >
+                  {/* Avatar for Others (Left) */}
+                  {msg.senderUserID !== currentUserID && (
+                    <div className="w-10 h-10 flex items-center justify-center bg-[var(--color-overlay)] rounded-full mr-3 mt-5">
+                      <FaUserAlt className="text-white text-xl" />
+                    </div>
+                  )}
+
+                  {/* Edit message box */}
+                  {editingMessageID === msg.messageID ? (
+                    <EditMessage
+                      editText={editText}
+                      setEditText={setEditText}
+                      setEditingMessageID={setEditingMessageID}
+                      handleEditMessage={handleEditMessage}
+                    />
+                  ) : (
+                    <div
+                      className={`flex flex-col max-w-[75%] ${
+                        msg.senderUserID === currentUserID
+                          ? "items-end"
+                          : "items-start"
+                      }`}
+                    >
+                      {/* Name and Timestamp */}
+                      <div className="text-xs text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
+                        <span>
+                          {msg.senderUserID === currentUserID
+                            ? "You"
+                            : msg.senderName}
+                        </span>
+                        <span className="text-gray-400">
+                          {formatTimestamp(msg.timestamp)}
+                        </span>
+                        {msg.isEdited && (
+                          <span className="italic text-gray-400 text-[11px]">
+                            Edited
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className={`relative w-full flex ${
+                          msg.senderUserID === currentUserID
+                            ? "justify-end"
+                            : "justify-start"
+                        } group`}
+                      >
+                        {/* Dot Menu */}
+                        {!msg.isDeleted && (
+                          <div
+                            className={`
+              absolute top-1/2 transform -translate-y-1/2
+              opacity-0 group-hover:opacity-100 transition-opacity
+              ${
+                msg.senderUserID === currentUserID
+                  ? "left-[-50px]"
+                  : "right-[-50px]"
+              }
+            `}
+                          >
+                            <MessageOptions
+                              isOwnMessage={msg.senderUserID === currentUserID}
+                              onDelete={() => setMessageToDelete(msg.messageID)}
+                              onEdit={() => {
+                                setEditingMessageID(msg.messageID);
+                                setEditText(msg.messageText);
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Message Bubble */}
+                        <div
+                          className={`
+            p-3 rounded-2xl text-sm shadow-md max-w-[100%] break-words
+            ${
+              msg.senderUserID === currentUserID
+                ? "bg-[var(--color-overlay-light)] text-white rounded-br-none"
+                : "bg-white text-black rounded-bl-none"
+            }
+          `}
+                        >
+                          {msg.isDeleted ? (
+                            <span
+                              className={`italic ${
+                                msg.senderUserID === currentUserID
+                                  ? "text-white/60"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              This message was deleted
+                            </span>
+                          ) : (
+                            <div>
+                              {highlightText(
+                                msg.messageText,
+                                searchQuery,
+                                filteredIndexes[searchIndex] === index
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {Object.keys(typingUsers).length > 0 && (
+            <div className="text-center text-xs text-gray-500 mb-2 italic">
+              {Object.values(typingUsers).join(", ")}{" "}
+              {Object.keys(typingUsers).length === 1 ? "is" : "are"} typing...
+            </div>
+          )}
+
+          <div ref={messagesEndRef}></div>
         </div>
 
         {/* Message Input */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] max-w-[600px] sm:w-[95%]">
-          <form onSubmit={sendMessage}>
-            <div className="flex items-center w-full bg-white bg-opacity-90 backdrop-blur-md rounded-full px-4 py-1.5 shadow-lg">
-              <button className="text-[var(--color-overlay-dark)] text-xl flex-shrink-0">
-                <GoPaperclip />
-              </button>
-              <input
-                type="text"
-                placeholder="Type a message"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 bg-transparent px-3 text-gray-700 outline-none placeholder-gray-500 text-sm min-w-0"
-              />
-              <button className="text-[var(--color-overlay-dark)] text-2xl mr-1 flex-shrink-0">
-                <MdOutlineEmojiEmotions />
-              </button>
-              <button
-                className="ml-2 w-9 h-9 flex items-center justify-center text-white rounded-full shadow-md flex-shrink-0"
-                style={{ backgroundColor: "var(--color-overlay-dark)" }}
-                type="submit"
-              >
-                <FaPaperPlane className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-        </div>
+        <MessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          isSending={isSending}
+          showEmojiPicker={showEmojiPicker}
+          setShowEmojiPicker={setShowEmojiPicker}
+          handleEmojiClick={handleEmojiClick}
+          currentUserID={currentUserID}
+          currentUserName={currentUserName}
+          chatID={chatID}
+          socket={socket}
+        />
       </div>
 
       {/* Right sidebar */}
       {isSidebarOpen && (
-        <div
-          className="w-[250px] text-white flex flex-col items-center p-4"
-          style={{ backgroundColor: "var(--color-overlay-dark)" }}
-        >
-          {/* Header */}
-          <div className="w-full flex justify-between items-center">
-            <h2 className="text-lg font-bold">
-              {activeTab === "direct" ? "Chat Details" : "Group Info"}
-            </h2>
-            <div
-              className="text-3xl cursor-pointer"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              &times;
-            </div>
-          </div>
+        <RightSidebar
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          activeTab={activeTab}
+          isNotificationsOn={isNotificationsOn}
+          setIsNotificationsOn={setIsNotificationsOn}
+        />
+      )}
 
-          {activeTab === "direct" ? (
-            // Sidebar for Direct Messages
-            <>
-              <div className="relative w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center mt-4"></div>
+      {isLeaveModalOpen && (
+        <ConfirmModal
+          message={`Are you sure you want to leave the "${chatTitle}" group?`}
+          onCancel={() => setIsLeaveModalOpen(false)}
+          onConfirm={async () => {
+            await handleLeaveGroup();
+            setIsLeaveModalOpen(false);
+          }}
+        />
+      )}
 
-              <h2 className="text-lg font-bold mt-2">Full Name</h2>
-              <p className="text-sm text-gray-300">Role</p>
+      {messageToDelete && (
+        <ConfirmModal
+          message="Are you sure you want to delete this message?"
+          onCancel={() => setMessageToDelete(null)}
+          onConfirm={async () => {
+            await handleDeleteMessage(messageToDelete);
+            setMessageToDelete(null);
+          }}
+        />
+      )}
 
-              <div className="mt-3 text-left w-full">
-                <h3 className="text-sm font-bold">Email:</h3>
-                <p className="text-sm text-gray-300">
-                  Fullname@make-it-all.co.uk
-                </p>
-              </div>
+      {isAddMemberOpen && (
+        <AddMemberModal
+          users={nonMembers}
+          onCancel={() => setIsAddMemberOpen(false)}
+          onAdd={handleAddMember}
+        />
+      )}
 
-              {/* Notifications Toggle */}
-              <div
-                className="mt-4 flex items-center justify-between w-full bg-[var(--color-overlay-light)] p-2 rounded-lg"
-                onClick={() => setIsNotificationsOn(!isNotificationsOn)}
-              >
-                <span className="text-sm font-bold">Notifications</span>
-
-                <div
-                  className={`w-10 h-5 flex items-center rounded-full transition-all duration-300 cursor-pointer 
-                    ${isNotificationsOn ? "bg-purple-500" : "bg-gray-300"}`}
-                >
-                  <div
-                    className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md 
-                        ${
-                          isNotificationsOn ? "translate-x-5" : "translate-x-0"
-                        }`}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Media Section */}
-              <div className="mt-6 w-full">
-                <h3 className="font-bold text-lg">
-                  Media <span className="text-sm text-gray-300">0 Images</span>
-                </h3>
-              </div>
-
-              {/* Shared Files Section */}
-              <div className="mt-6 w-full">
-                <div className="flex justify-between">
-                  <h3 className="font-bold text-lg">Shared Files</h3>
-                  <span className="text-sm text-gray-300 cursor-pointer">
-                    View All
-                  </span>
-                </div>
-              </div>
-            </>
-          ) : (
-            // Sidebar for Group Chats
-            <>
-              {/* Header */}
-              <div className="flex flex-col items-center mt-4">
-                <div className="w-20 h-20 bg-pink-500 rounded-full"></div>
-                <div className="mt-3 flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Group Title</h2>
-                  <FaPencilAlt className="cursor-pointer text-white text-sm" />
-                </div>
-                <p className="text-sm text-gray-300">0 Members</p>
-              </div>
-
-              {/* Members Section */}
-              <div className="mt-10 w-full">
-                <div className="flex justify-between">
-                  <h3 className="font-bold text-lg">Members</h3>
-                  <span className="text-sm text-gray-300 cursor-pointer">
-                    View All
-                  </span>
-                </div>
-              </div>
-
-              {/* Media Section */}
-              <div className="mt-20 w-full">
-                <h3 className="font-bold text-lg">
-                  Media <span className="text-sm text-gray-300">0 Images</span>
-                </h3>
-              </div>
-
-              {/* Shared Files Section */}
-              <div className="mt-20 w-full">
-                <div className="flex justify-between">
-                  <h3 className="font-bold text-lg">Shared Files</h3>
-                  <span className="text-sm text-gray-300 cursor-pointer">
-                    View All
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+      {isDeleteChatModalOpen && (
+        <ConfirmModal
+          message="Are you sure you want to delete this chat? This action cannot be undone."
+          onCancel={() => setIsDeleteChatModalOpen(false)}
+          onConfirm={async () => {
+            await handleDeleteChat();
+            setIsDeleteChatModalOpen(false);
+          }}
+        />
       )}
     </div>
   );

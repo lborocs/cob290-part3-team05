@@ -14,11 +14,13 @@ ls -l $BUILD_DIR
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
 cd $FRONTEND_DIR
+rm -rf node_modules package-lock.json
 npm install
 
 # Install backend dependencies
 echo "Installing backend dependencies..."
 cd $BACKEND_DIR
+rm -rf node_modules package-lock.json
 npm install
 
 # Build the frontend project

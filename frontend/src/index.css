@@ -37,3 +37,13 @@
     --color-status-gray-light: #EEEEEF;
   }
 }
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-overlay-light);
+  border-radius: 9999px;
+}
