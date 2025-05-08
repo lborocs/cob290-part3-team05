@@ -332,7 +332,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
-  path: "/socket.io"
+  path: "/socket.io/"
 });
 
 io.on("connection", (socket) => {

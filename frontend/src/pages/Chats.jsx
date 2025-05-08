@@ -27,7 +27,7 @@ import { jwtDecode } from "jwt-decode";
 // Initial WebSocket connection
 const socket = io("http://localhost:8080", {
   transports: ["websocket", "polling"],
-  path: "/socket.io",
+  path: "/socket.io/",
   withCredentials: true,
 });
 
