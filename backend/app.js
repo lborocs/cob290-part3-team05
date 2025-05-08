@@ -338,10 +338,13 @@ app.post("/chats/:chatID/members", async (req, res) => {
 
 app.post("/chats", async (req, res) => {
   const { chatName, chatType, creatorID, userIDList } = req.body;
-  console.log(req.body)
+  console.log(chatName)
 
   try {
-    const { chatID, alreadyExists, systemMessage } = await createChat(chatName, chatType, creatorID, userIDList);
+    const chatNameToSend = chatType === "Private" ? null : chatName;
+    console.log(chatNameToSend)
+
+    const { chatID, alreadyExists, systemMessage } = await createChat(chatNameToSend, chatType, creatorID, userIDList);
 
     if (systemMessage) {
       console.log("Emitting system message:", systemMessage);

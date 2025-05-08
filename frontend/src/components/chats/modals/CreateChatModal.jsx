@@ -3,7 +3,7 @@ import Select from "react-select";
 import { FaTimes, FaUsers, FaUserAlt } from "react-icons/fa";
 
 const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
-  const [chatTitle, setChatTitle] = useState("");
+  const [chatName, setChatName] = useState("");
   const [chatType, setChatType] = useState("Private");
   const [selectedUsers, setSelectedUsers] = useState([]);
 
@@ -81,11 +81,11 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
     if (chatType === "Private") {
       if (!newSelection || newSelection.length === 0) {
         setSelectedUsers([]);
-        setChatTitle("");
+        setChatName("");
       } else {
         const selectedUser = newSelection[newSelection.length - 1];
         setSelectedUsers([selectedUser]);
-        setChatTitle(selectedUser.label);
+        setChatName(selectedUser.label);
       }
     } else {
       setSelectedUsers(newSelection);
@@ -102,7 +102,7 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
     ];
 
     const newChat = {
-      chatTitle,
+      chatName,
       chatType,
       creatorID: currentUserID,
       userIDList,
@@ -136,8 +136,8 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
             </label>
             <input
               type="text"
-              value={chatTitle}
-              onChange={(e) => setChatTitle(e.target.value)}
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
               className="w-full px-3 py-2 rounded border border-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter chat title"
               required
@@ -161,7 +161,7 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
                     setChatType("Private");
                     setAvailableUsers(availablePrivUsers);
                     setSelectedUsers([]);
-                    setChatTitle("");
+                    setChatName("");
                   }}
                   className="mr-2"
                 />
@@ -228,7 +228,7 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
               type="submit"
               className="bg-[var(--color-overlay-dark)] text-white px-4 py-1.5 text-sm rounded hover:bg-[var(--color-overlay)] disabled:opacity-50 disabled:hover:bg-[var(--color-overlay-dark)]"
               disabled={
-                (chatType === "Group" && !chatTitle) ||
+                (chatType === "Group" && !chatName) ||
                 (chatType === "Private" && selectedUsers.length !== 1)
               }
             >
