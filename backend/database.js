@@ -45,7 +45,7 @@ export async function getGanttChartData(id) {
       p.startDate,
       p.dueDate
     FROM 
-      userTeams ut
+      UserTeams ut
     JOIN 
       Projects p ON ut.projectID = p.projectID
     WHERE 
@@ -89,7 +89,7 @@ export async function getBurnDownData(id) {
       COUNT(t.taskID) AS count,
       SUM(t.manHours) AS hours
   FROM 
-      tasks t
+      Tasks t
   WHERE 
       t.projectID = ? -- Replace with your project ID parameter
       AND t.status = 'Completed'
@@ -149,7 +149,7 @@ export async function getRecentActivityProject(id) {
         END
       )) AS daysAgo
     FROM 
-      tasks t
+      Tasks t
     LEFT JOIN
       Users u ON t.assigneeID = u.userID
     WHERE 
@@ -314,7 +314,7 @@ export async function getWorkLoadUser(userID) {
         1
       ) AS workloadPercentage
     FROM 
-      tasks
+      Tasks
     WHERE 
       assigneeId = ?
       AND startDate IS NOT NULL 
@@ -335,7 +335,7 @@ export async function getDoughnutData(userID) {
       COUNT(CASE WHEN status = 'in progress' THEN 1 END) AS inProgress,
       COUNT(CASE WHEN dueDate < NOW() AND status != 'completed' THEN 1 END) AS overdue
     FROM 
-      tasks
+      Tasks
     WHERE 
       assigneeId = ?;
     `,
@@ -379,7 +379,7 @@ export async function getNumTasksProj(id) {
     COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
     COUNT(CASE WHEN t.dueDate < NOW() AND t.status != 'completed' THEN 1 END) AS overdue
 FROM 
-    userTeams ut
+    UserTeams ut
 JOIN 
     Projects p ON ut.projectID = p.projectID
 LEFT JOIN 
@@ -439,8 +439,8 @@ export async function getRecentActivityUser(id) {
             WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN t.startDate
         END
     )) AS daysAgo
-FROM tasks t
-JOIN projects p ON t.projectId = p.projectId
+FROM Tasks t
+JOIN Projects p ON t.projectId = p.projectId
 WHERE (
     (t.status = 'Completed')
     OR (t.status = 'To Do' AND t.startDate <= CURDATE())
