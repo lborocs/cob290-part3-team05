@@ -337,7 +337,13 @@ export async function updateGroupTitle(chatID, newTitle) {
 
 // POST /chats
 export async function createChat(chatName, chatType, creatorID, userIDList) {
-    if (chatType == "Private") {
+    // If the chat is private, we can allow chatName to be null or use a default value
+    if (chatType === "Private" && !chatName) {
+        chatName = null;  // Allow null for private chat name
+    }
+
+    // For private chat, check if a chat already exists between the two users
+    if (chatType === "Private") {
         const [userA, userB] = userIDList;
         const [existing] = await pool.query(
             `SELECT cu1.chatID FROM ChatUsers cu1
@@ -347,39 +353,42 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
              GROUP BY cu1.chatID
              HAVING COUNT(DISTINCT cu1.userID) = 2`,
             [userA, userB]
-        )
+        );
 
         if (existing.length > 0) {
             return { chatID: existing[0].chatID, alreadyExists: true };
         }
     }
+
+    // Insert a new chat (allow chatName to be null for private chat)
     const [chat] = await pool.query(
-        `INSERT INTO Chats (chatName,chatType,creatorID) VALUES (?,?,?)`,
-        [chatName, chatType, creatorID]
-    )
+        `INSERT INTO Chats (chatName, chatType, creatorID) VALUES (?, ?, ?)`,
+        [chatName, chatType, creatorID]  // Here, `chatName` can be `null` for private chat
+    );
+
     const chatID = chat.insertId;
 
-    const [creatorName]= await pool.query(
-        `SELECT firstName, lastName
-        FROM users
-        WHERE userID = ?
-        `,
+    // Get the creator's name
+    const [creatorName] = await pool.query(
+        `SELECT firstName, lastName FROM users WHERE userID = ?`,
         [creatorID]
-    )
+    );
     const creator = creatorName[0];
     const fullName = `${creator.firstName} ${creator.lastName}`;
     const systemMessage = `${fullName} created a chat`;
 
+    // Insert the system message
     const [result] = await pool.query(
         `INSERT INTO MessagesTable (chatID, senderUserID, messageText, timestamp) VALUES (?, 0, ?, NOW())`,
         [chatID, systemMessage]
     );
 
+    // Add users to the chat
     for (const userID of userIDList) {
         await pool.query(
-            `INSERT INTO ChatUsers (chatID,userID,pinnedChat) VALUES (?,?,0)`,
+            `INSERT INTO ChatUsers (chatID, userID, pinnedChat) VALUES (?, ?, 0)`,
             [chatID, userID]
-        )
+        );
     }
 
     return { chatID, alreadyExists: false, systemMessage };
@@ -400,7 +409,7 @@ export async function getUsersNotInPrivateWith(userID){
 
     if (chatIDs.length === 0) {
         const [users] = await pool.query(
-          `SELECT userID FROM Users WHERE userID != ?`,
+          `SELECT userID, firstName, lastName FROM Users WHERE userID != ? AND userID != 0`,
           [userID]
         );
         return users;
