@@ -370,7 +370,7 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
 
     // Get the creator's name
     const [creatorName] = await pool.query(
-        `SELECT firstName, lastName FROM users WHERE userID = ?`,
+        `SELECT firstName, lastName FROM Users WHERE userID = ?`,
         [creatorID]
     );
     const creator = creatorName[0];
