@@ -181,35 +181,35 @@ const ProjectDetails = () => {
 
   // Task distribution by employee data
   const taskPerEmployeeData = {
-    labels: metrics.taskPerUser.map((user) => user.employeeName), // Employee names as labels
+    labels: metrics.taskPerUser.map((user) => user.employeeName), 
     datasets: [
       {
         label: 'To Do',
         data: metrics.taskPerUser.map((user) => user.toDo), // To Do tasks
-        backgroundColor: '#8e8e91', // Grey
-        borderRadius: 25, // Rounded corners
-        barThickness: 20, // Adjust bar width
+        backgroundColor: '#8e8e91', 
+        borderRadius: 25, 
+        barThickness: 20, 
       },
       {
         label: 'In Progress',
         data: metrics.taskPerUser.map((user) => user.inProgress), // In Progress tasks
-        backgroundColor: '#eab385', // Amber
-        borderRadius: 25, // Rounded corners
-        barThickness: 20, // Adjust bar width
+        backgroundColor: '#eab385', 
+        borderRadius: 25, 
+        barThickness: 20, 
       },
       {
         label: 'Completed',
         data: metrics.taskPerUser.map((user) => user.completed), // Completed tasks
-        backgroundColor: '#adda9d', // Green
-        borderRadius: 25, // Rounded corners
-        barThickness: 20, // Adjust bar width
+        backgroundColor: '#adda9d', 
+        borderRadius: 25, 
+        barThickness: 20, 
       },
       {
         label: 'Overdue',
         data: metrics.taskPerUser.map((user) => user.overdue), // Overdue tasks
-        backgroundColor: '#f5a3a3', // Red
-        borderRadius: 25, // Rounded corners
-        barThickness: 20, // Adjust bar width
+        backgroundColor: '#f5a3a3', 
+        borderRadius: 25, 
+        barThickness: 20, 
       },
     ],
   };
