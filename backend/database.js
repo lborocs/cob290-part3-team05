@@ -420,13 +420,13 @@ export async function getUsersNotInPrivateWith(userID){
      FROM Users u
      WHERE u.userID != ?
         AND u.userID NOT IN (
-        SELECT cu.userID
-        FROM ChatUsers cu
-        WHERE cu.chatID IN (?)
+            SELECT cu.userID
+            FROM ChatUsers cu
+            WHERE cu.chatID IN (?)
         )
-        AND u.userID != 0
+        AND u.userID != 0;
          `,
-    [userID, [chatIDs]]
+    [userID, chatIDs]
     );
 
     return users;
