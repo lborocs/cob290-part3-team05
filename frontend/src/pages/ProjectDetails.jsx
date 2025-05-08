@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import BurndownChart from '../components/analytics/chart/BurndownChart'; 
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
@@ -20,58 +21,85 @@ const ProjectDetails = () => {
     budgetTotal: 0,
     teamMembers: 0,
     daysSinceStart: 0,
-    daysToDeadline: 0
+    daysToDeadline: 0,
+    doughnutData: {},
+    taskPerUser: [],
+    burndownData : [],
+    recentActivity: []
   });
 
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
         setLoading(true);
-        
+  
         // Get JWT token from localStorage
         const token = localStorage.getItem('token');
-        
+  
         // Create headers with authorization
         const headers = {
           'Authorization': `Bearer ${token}`,
           "X-Internal-Request": "true",
           'Content-Type': 'application/json'
         };
-        
+  
         console.log('Request headers:', headers);
-        
+  
         // Adjust the API endpoint based on your backend structure
-        const response = await fetch(`/api/projects/${projectId}`, {
+        const response = await fetch(`/api/project/${projectId}`, {
           method: 'GET',
           headers: headers
         });
+
+        const analyticsResponse = await fetch(`/api/project/${projectId}/analytics`, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (!analyticsResponse.ok) {
+          throw new Error(`Failed to fetch analytics: ${analyticsResponse.status}`);
+        }
         
+        
+
+  
         if (!response.ok) {
           throw new Error(`Failed to fetch project: ${response.status}`);
         }
         
-        const data = await response.json();
-        setProject(data);
+  
+        const responseData = await response.json();
+        const analyticsData = await analyticsResponse.json();
+  
+        // Extract project data from responseData
+        const { project, userRole, userID } = responseData;
         
+        console.log('Project data:', project);
+
+        setProject(project);
+  
         // Calculate metrics from the project data
-        if (data) {
-          // These calculations are placeholders - replace with real calculations
-          const startDate = data.startDate ? new Date(data.startDate) : new Date();
-          const dueDate = data.dueDate ? new Date(data.dueDate) : new Date();
+        if (project) {
+          const startDate = project.startDate ? new Date(project.startDate) : new Date();
+          const dueDate = project.dueDate ? new Date(project.dueDate) : new Date();
           const today = new Date();
           
-          // Sample metrics calculations
+
+
+          //Sawan Update Data Here
           setMetrics({
-            tasksCompleted: Math.floor(Math.random() * 40) + 10, // Replace with actual task data
-            tasksTotal: Math.floor(Math.random() * 30) + 40, // Replace with actual task data
-            budgetUsed: Math.floor(Math.random() * 50000) + 10000, // Replace with actual budget data
-            budgetTotal: 100000, // Replace with actual budget data
-            teamMembers: Math.floor(Math.random() * 8) + 3, // Replace with actual team data
+            tasksCompleted: analyticsData.doughnutData.completed || 0,
+            tasksTotal: analyticsData.totalTasks || 0,
+            teamMembers: 10,
             daysSinceStart: Math.floor((today - startDate) / (1000 * 60 * 60 * 24)),
-            daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24))
+            daysToDeadline: Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)),
+            doughnutData: analyticsData.doughnutData || 0,
+            taskPerUser: analyticsData.taskPerUser || [],
+            burndownData: analyticsData.burndownData || [],
+            recentActivity: analyticsData.recentActivityProject || []
           });
         }
-        
+  
         setLoading(false);
       } catch (err) {
         console.error('Error fetching project details:', err);
@@ -117,31 +145,28 @@ const ProjectDetails = () => {
     }
   };
 
-  // Chart data for tasks progress
-  const tasksData = {
-    labels: ['Completed', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.tasksCompleted, metrics.tasksTotal - metrics.tasksCompleted],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+ // Doughnut Chart with improved colors
+ const tasksData = {
+  labels: ['To Do', 'In Progress', 'Completed', 'Overdue'],
+  datasets: [
+    {
+      data: [metrics.doughnutData.toDo, metrics.doughnutData.inProgress, metrics.doughnutData.completed, metrics.doughnutData.overdue],
+      backgroundColor: ['#8e8e91', '#eab385', '#adda9d', '#f5a3a3'], // Colors for each status
+      borderColor: ['#1E6B37', '#D48F07', '#136A8C', '#B02A37'], // Darker shades for 3D effect
+      borderWidth: 1, // Slightly thicker border for better visibility
+    },
+  ],
+};
 
-  // Chart data for budget usage
-  const budgetData = {
-    labels: ['Used', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.budgetUsed, metrics.budgetTotal - metrics.budgetUsed],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+
+  // Sample data for burndown chart
+  const sampleCompletionData = [
+    { date: '2025-04-05', count: 1 },  // 1 task completed on April 5
+    { date: '2025-04-12', count: 1 },  // 1 more task completed on April 12
+    { date: '2025-04-20', count: 2 }   // 2 more tasks completed on April 20
+  ];
+
+  
 
   // Chart options
   const chartOptions = {
@@ -154,37 +179,95 @@ const ProjectDetails = () => {
     }
   };
 
-  // Weekly progress data (sample data)
-  const weeklyProgressData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+  // Task distribution by employee data
+  const taskPerEmployeeData = {
+    labels: metrics.taskPerUser.map((user) => user.employeeName), 
     datasets: [
       {
-        label: 'Tasks Completed',
-        data: [5, 8, 12, 7, 9, metrics.tasksCompleted - 41], // Sample data - replace with actual
-        backgroundColor: 'rgba(90, 39, 119, 0.7)',
-        barThickness: 20,
+        label: 'To Do',
+        data: metrics.taskPerUser.map((user) => user.toDo), // To Do tasks
+        backgroundColor: '#8e8e91', 
+        borderRadius: 25, 
+        barThickness: 20, 
+      },
+      {
+        label: 'In Progress',
+        data: metrics.taskPerUser.map((user) => user.inProgress), // In Progress tasks
+        backgroundColor: '#eab385', 
+        borderRadius: 25, 
+        barThickness: 20, 
+      },
+      {
+        label: 'Completed',
+        data: metrics.taskPerUser.map((user) => user.completed), // Completed tasks
+        backgroundColor: '#adda9d', 
+        borderRadius: 25, 
+        barThickness: 20, 
+      },
+      {
+        label: 'Overdue',
+        data: metrics.taskPerUser.map((user) => user.overdue), // Overdue tasks
+        backgroundColor: '#f5a3a3', 
+        borderRadius: 25, 
+        barThickness: 20, 
       },
     ],
   };
 
-  // Bar chart options
-  const barOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
+    const barOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            font: {
+              size: 14,
+              family: 'Poppins, sans-serif', // Modern font
+            },
+            color: '#1C2341', // Dark text color
+          },
+        },
+        title: {
+          display: true,
+          text: 'Task Distribution by Employee',
+          font: {
+            size: 18,
+            weight: 'bold',
+            family: 'Poppins, sans-serif',
+          },
+          color: '#1C2341',
+        },
       },
-      title: {
-        display: true,
-        text: 'Weekly Progress'
+      scales: {
+        x: {
+          stacked: true, // Stack bars horizontally
+          grid: {
+            display: false, // Hide grid lines for a cleaner look
+          },
+          ticks: {
+            font: {
+              size: 12,
+              family: 'Poppins, sans-serif',
+            },
+            color: '#2E3944',
+          },
+        },
+        y: {
+          stacked: true, // Stack bars vertically
+          beginAtZero: true,
+          grid: {
+            color: '#D9D9D9', // Light grid lines
+          },
+          ticks: {
+            font: {
+              size: 12,
+              family: 'Poppins, sans-serif',
+            },
+            color: '#2E3944',
+          },
+        },
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  };
+    };
 
   if (loading) {
     return (
@@ -272,18 +355,18 @@ const ProjectDetails = () => {
           </div>
           
           <div className="bg-[#E8C2F4]/10 p-4 rounded-lg shadow-sm">
-            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Budget</div>
-            <div className="text-2xl font-bold text-[#1C2341]">${(metrics.budgetUsed/1000).toFixed(1)}k</div>
+            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Employee</div>
+            <div className="text-2xl font-bold text-[#1C2341]">{(metrics.taskPerUser.length)}</div>
             <div className="text-[#2E3944] text-sm mt-1">
-              of ${(metrics.budgetTotal/1000).toFixed(1)}k total
+              total members
             </div>
           </div>
           
           <div className="bg-[#E8C2F4]/10 p-4 rounded-lg shadow-sm">
-            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Team</div>
-            <div className="text-2xl font-bold text-[#1C2341]">{metrics.teamMembers}</div>
+            <div className="text-[#5A2777] text-sm uppercase font-medium mb-2">Team Lead</div>
+            <div className="text-2xl font-bold text-[#1C2341]">{project.leaderName}</div>
             <div className="text-[#2E3944] text-sm mt-1">
-              <span className="font-medium">Leader:</span> {project.projectLeader}
+              <span className="font-medium">Contact:</span> {project.leaderEmail}
             </div>
           </div>
         </div>
@@ -294,10 +377,10 @@ const ProjectDetails = () => {
         {/* Progress Charts */}
         <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] lg:col-span-2">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Weekly Progress</h2>
+            <h2 className="text-lg font-semibold text-[#1C2341]">Task Breakdown</h2>
           </div>
           <div className="p-4 h-64">
-            <Bar options={barOptions} data={weeklyProgressData} />
+            <Bar options={barOptions} data={taskPerEmployeeData} />
           </div>
         </div>
         
@@ -312,43 +395,77 @@ const ProjectDetails = () => {
         </div>
       </div>
       
-      {/* Additional Project Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+            {/* Additional Project Info */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Burndown Chart */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Budget Allocation</h2>
+            <h2 className="text-lg font-semibold text-[#1C2341]">Project Burndown</h2>
+            <p className="text-sm text-[#2E3944]">Task completion progress over time</p>
           </div>
-          <div className="p-4 h-64 flex items-center justify-center">
-            <Doughnut data={budgetData} options={chartOptions} />
+          <div className="p-4 h-80">
+            <BurndownChart 
+              startDate={project.startDate}
+              dueDate={project.dueDate}
+              totalTasks={metrics.tasksTotal}
+              completedTasksByDate={metrics.burndownData}
+            />
           </div>
         </div>
         
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+        {/* Recent Activities - Full width and below burndown chart */}
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
             <h2 className="text-lg font-semibold text-[#1C2341]">Recent Activities</h2>
           </div>
-          <div className="p-4 divide-y divide-[#D9D9D9]">
-            {/* Sample activities - replace with actual activity data */}
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">New task added</div>
-              <div className="text-xs text-[#2E3944]">Yesterday at 3:45 PM</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Budget updated</div>
-              <div className="text-xs text-[#2E3944]">2 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Team member added</div>
-              <div className="text-xs text-[#2E3944]">3 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Milestone completed</div>
-              <div className="text-xs text-[#2E3944]">5 days ago</div>
-            </div>
+          <div className="p-4 divide-y divide-[#D9D9D9] h-64 overflow-y-auto">
+            {/* Show actual activity data from API */}
+            {metrics.recentActivity && metrics.recentActivity.length > 0 ? (
+              metrics.recentActivity.map((activity, index) => (
+                <div className="py-3" key={`activity-${index}`}>
+                  <div className="text-sm font-medium text-[#1C2341]">
+                    {activity.assigneeName && <span className="text-[#5A2777]">{activity.assigneeName}</span>}
+                    {' '}
+                    {activity.activityType.toLowerCase()}
+                    {activity.taskName && <span className="font-medium">{' '}{activity.taskName}</span>}
+                  </div>
+                  <div className="text-xs text-[#2E3944] mt-1">
+                    <span>
+                      {activity.daysAgo === 0 ? 'Today' : 
+                      activity.daysAgo === 1 ? 'Yesterday' : 
+                      `${activity.daysAgo} days ago`}
+                    </span>
+                    {activity.taskStatus && <span className="ml-1">• Status: {activity.taskStatus}</span>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Fallback to sample data if no API data available
+              <>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">New task added</div>
+                  <div className="text-xs text-[#2E3944]">Yesterday at 3:45 PM</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Budget updated</div>
+                  <div className="text-xs text-[#2E3944]">2 days ago</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Team member added</div>
+                  <div className="text-xs text-[#2E3944]">3 days ago</div>
+                </div>
+                <div className="py-3">
+                  <div className="text-sm font-medium text-[#1C2341]">Milestone completed</div>
+                  <div className="text-xs text-[#2E3944]">5 days ago</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+    
   );
 };
 

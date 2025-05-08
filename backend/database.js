@@ -36,6 +36,139 @@ export async function getUser(id) {
     return rows[0];
 }
 
+export async function getGanttChartData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      p.projectID,
+      p.projectTitle,
+      p.startDate,
+      p.dueDate
+    FROM 
+      userTeams ut
+    JOIN 
+      Projects p ON ut.projectID = p.projectID
+    WHERE 
+      ut.userID = 1;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+export async function getAllTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'in progress' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN dueDate < CURDATE() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+    `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return {
+    toDo: rows[0]?.toDo || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    completed: rows[0]?.completed || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
+export async function getBurnDownData(id) {
+  const [rows] = await pool.query(
+    `
+      SELECT 
+      DATE(t.completionDate) AS date,
+      COUNT(t.taskID) AS count,
+      SUM(t.manHours) AS hours
+  FROM 
+      tasks t
+  WHERE 
+      t.projectID = ? -- Replace with your project ID parameter
+      AND t.status = 'Completed'
+      AND t.completionDate IS NOT NULL
+  GROUP BY 
+      DATE(t.completionDate)
+  ORDER BY 
+      date ASC;
+  `,
+    [id]
+  );
+
+  return rows;
+}
+
+export async function getTotalTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(*) AS totalTasks
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+  `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return rows[0]?.totalTasks || 0;
+}
+
+export async function getRecentActivityProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      t.name AS taskName,
+      t.status AS taskStatus,
+      t.assigneeID,
+      CONCAT(u.firstName, ' ', u.lastName) AS assigneeName,
+      CASE
+        WHEN t.status = 'Completed' THEN t.completionDate
+        WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+        ELSE NULL
+      END AS activityDate,
+      CASE
+        WHEN t.status = 'Completed' THEN 'Task completed'
+        WHEN t.status = 'In Progress' THEN 'Task in progress'
+        WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN 'Task started'
+        ELSE NULL
+      END AS activityType,
+      ABS(DATEDIFF(CURDATE(), 
+        CASE
+          WHEN t.status = 'Completed' THEN t.completionDate
+          WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+          ELSE CURDATE()
+        END
+      )) AS daysAgo
+    FROM 
+      tasks t
+    LEFT JOIN
+      Users u ON t.assigneeID = u.userID
+    WHERE 
+      t.projectID = ?
+      AND (
+        (t.status = 'Completed' AND t.completionDate IS NOT NULL)
+        OR 
+        (t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE())
+      )
+    ORDER BY 
+      daysAgo ASC, 
+      FIELD(t.status, 'Completed', 'In Progress', 'To Do') ASC
+    LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
@@ -113,6 +246,215 @@ export async function getChats(userID) {
     }
 }
 
+export async function isLeadingProject(userID, projectID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * FROM Projects
+    Where projectID = ? AND projectLeader = ?
+  `,
+    [projectID, userID]
+  );
+  return rows.length > 0;
+}
+
+export async function getProjectsTeamLeader(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * From Projects
+    WHERE projectLeader = ?
+  `,
+    [userID]
+  );
+  return rows;
+}
+
+export async function getNumProjectUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numProjects
+    FROM UserTeams
+    WHERE userID = ?
+  `,
+    [userID]
+  );
+  return rows[0].numProjects;
+}
+
+export async function getNumTasksUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numTasks
+    FROM Tasks
+    WHERE assigneeId = ?
+  `,
+    [userID]
+  );
+  return rows[0].numTasks;
+}
+
+export async function getNumCompletedTasks(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numCompletedTasks
+    FROM Tasks
+    WHERE assigneeID = ? AND status = 'Completed'
+  `,
+    [userID]
+  );
+  return rows[0].numCompletedTasks;
+}
+
+export async function getWorkLoadUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      ROUND(
+        (SUM(manHours) / SUM(DATEDIFF(dueDate, startDate) + 1)) 
+        / 8 * 100, 
+        1
+      ) AS workloadPercentage
+    FROM 
+      tasks
+    WHERE 
+      assigneeId = ?
+      AND startDate IS NOT NULL 
+      AND dueDate IS NOT NULL
+      AND manHours IS NOT NULL;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return rows[0]?.workloadPercentage || 0; // Return 0 if no data is found
+}
+
+export async function getDoughnutData(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN status = 'in progress' THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN dueDate < NOW() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      tasks
+    WHERE 
+      assigneeId = ?;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return {
+    toDo: rows[0]?.toDo || 0,
+    completed: rows[0]?.completed || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
+export async function getProjectData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      p.*,
+      CONCAT(u.firstName, ' ', u.lastName) AS leaderName,
+      u.userEmail AS leaderEmail
+    FROM 
+      Projects p
+    LEFT JOIN 
+      Users u ON p.projectLeader = u.userID
+    WHERE 
+      p.projectID = ?
+  `,
+    [id]
+  );
+  return rows[0];
+}
+
+export async function getNumTasksProj(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    p.projectID,
+    p.projectTitle,
+    COUNT(CASE WHEN t.status = 'to do' THEN 1 END) AS toDo,
+    COUNT(CASE WHEN t.status = 'in progress' THEN 1 END) AS inProgress,
+    COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+    COUNT(CASE WHEN t.dueDate < NOW() AND t.status != 'completed' THEN 1 END) AS overdue
+FROM 
+    userTeams ut
+JOIN 
+    Projects p ON ut.projectID = p.projectID
+LEFT JOIN 
+    Tasks t ON p.projectID = t.projectID
+WHERE 
+    ut.userID = 1
+GROUP BY 
+    p.projectID, p.projectTitle
+ORDER BY 
+    p.projectTitle;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+export async function getUserTasksProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      u.userID,
+      CONCAT(u.firstName, ' ', u.lastName) AS employeeName,
+      u.userEmail,
+      COUNT(t.taskID) AS totalAssigned,
+      COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN t.status = 'to do' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN t.status = 'in progress' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN t.dueDate < CURDATE() AND t.status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Users u
+    JOIN 
+      UserTeams ut ON u.userID = ut.userID
+    LEFT JOIN 
+      Tasks t ON t.assigneeId = u.userID AND t.projectID = ut.projectID
+    WHERE 
+      ut.projectID = ?
+    GROUP BY 
+      u.userID, u.firstName, u.lastName, u.userEmail
+    ORDER BY 
+      completed DESC, totalAssigned DESC
+    `,
+    [id]
+  );
+
+  return rows;
+}
+
+export async function getRecentActivityUser(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    t.name AS taskName,
+    p.projectTitle AS projectName,
+    ABS(DATEDIFF(CURDATE(),
+        CASE
+            WHEN t.status = 'Completed' THEN t.completionDate
+            WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN t.startDate
+        END
+    )) AS daysAgo
+FROM tasks t
+JOIN projects p ON t.projectId = p.projectId
+WHERE (
+    (t.status = 'Completed')
+    OR (t.status = 'To Do' AND t.startDate <= CURDATE())
+)
+AND t.assigneeId = ?
+ORDER BY daysAgo ASC
+LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+// Chat SQL Queries
 // GET /messages/:chatID
 export async function getMessages(chatID) {
     try {
@@ -218,6 +560,7 @@ export async function editMessage(messageID, newText) {
     }
 }
 
+
 // DELETE /chats/:chatID/leave/:userID
 export async function leaveGroup(chatID, userID) {
     // 1. Fetch chat details
@@ -280,6 +623,7 @@ export async function deleteChat(chatID) {
     await pool.query(`DELETE FROM Chats WHERE chatID = ?`, [chatID]);
     return { chatID, deleted: true };
 }
+
 
 // GET /chats/:chatID/non-members 
 export async function getNonMembers(chatID) {

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -10,6 +10,23 @@ import {
   getUserByEmail,
   getProjects,
   getProjectData,
+  
+  isLeadingProject,
+  getProjectsTeamLeader,
+  getNumProjectUser,
+  getNumCompletedTasks,
+  getWorkLoadUser,
+  getNumTasksUser,
+  getDoughnutData,
+  getNumTasksProj,
+  getRecentActivityUser,
+  getGanttChartData,
+  getAllTasksByProject,
+  getTotalTasksByProject,
+  getUserTasksProject,
+  getBurnDownData,
+  getRecentActivityProject,
+  
   getChats,
   getMessages,
   sendMessage,
@@ -23,9 +40,10 @@ import {
   createChat,
   getUsersNotInPrivateWith,
   getUsersNotCurrent
-} from './database.js';
+} from "./database.js";
 import http from 'http';
 import { Server } from 'socket.io';
+
 
 const app = express();
 
@@ -74,14 +92,14 @@ app.use(express.json());
 function checkInternalRequest(req, res, next) {
   const internalRequest = req.get("X-Internal-Request");
   if (internalRequest !== "true") {
-    return res.status(403).json({ message: "Forbidden: Internal request required" });
+    return res
+      .status(403)
+      .json({ message: "Forbidden: Internal request required" });
   }
 
   next();
 }
 
-// Apply internal request check for protected routes
-app.use("/users", checkInternalRequest);
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
   const users = await getUsers();
@@ -94,6 +112,43 @@ app.get("/users/:id", async (req, res) => {
   res.send(user);
 });
 
+app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
+  // Check if admin or manager
+
+  const id = req.params.id;
+  const numProject = await getNumProjectUser(id);
+  const numTasks = await getNumTasksUser(id);
+  const numCompletedTasks = await getNumCompletedTasks(id);
+  const workLoadUser = await getWorkLoadUser(id);
+  const doughnutData = await getDoughnutData(id);
+  const taskByProject = await getNumTasksProj(id);
+  const recentActivityUser = await getRecentActivityUser(id);
+  const ganttChartData = await getGanttChartData(id);
+
+  const taskCompletionRate = (numCompletedTasks / numTasks) * 100;
+
+  const workloadImpact = 100 / workLoadUser;
+
+  // Calculate the Productivity Score (weighted average)
+  const productivityScore =
+    taskCompletionRate * 0.5 + workloadImpact * 0.3 + 100 * 0.2;
+
+  const roundedProductivityScore = Number(productivityScore.toFixed(0));
+
+  const responseData = {
+    numProjects: numProject,
+    numTasks: numTasks,
+    numCompletedTasks: numCompletedTasks,
+    workLoadUser: workLoadUser,
+    productivityScore: roundedProductivityScore,
+    doughnutData: doughnutData,
+    taskByProject: taskByProject,
+    recentActivityUser: recentActivityUser,
+    ganttChartData: ganttChartData,
+  };
+  res.send(responseData);
+});
+
 app.post("/users", async (req, res) => {
   const { userEmail, firstName, lastName, userType } = req.body;
   const user = await createUser(userEmail, firstName, lastName, userType);
@@ -103,6 +158,22 @@ app.post("/users", async (req, res) => {
 // Add project endpoints
 app.get("/projects", authenticateToken, async (req, res) => {
   try {
+    const userRole = req.user.userType;
+    const userID = req.user.id;
+
+    // If user is team leader just show projects they are leading or a employee on
+    if (userRole === "TeamLeader") {
+      const projects = await getProjectsTeamLeader(userID);
+      return res.send(projects);
+    }
+
+    // If user is employee don't show projects
+    if (userRole === "Employee") {
+      return res.status(403).json({
+        message: "Forbidden: Employees do not have access to project data",
+      });
+    }
+
     const projects = await getProjects();
     res.send(projects);
   } catch (error) {
@@ -111,19 +182,91 @@ app.get("/projects", authenticateToken, async (req, res) => {
   }
 });
 
-app.get("/projects/:id", async (req, res) => {
+app.get("/project/:id", authenticateToken, async (req, res) => {
   try {
+    const userRole = req.user.userType;
     const id = req.params.id;
+    const userID = req.user.id;
+
+    //Check permission of they can see the project data or not
+    if (userRole !== "admin" && userRole !== "manager") {
+      const hasAccess = await isLeadingProject(userID, id);
+      if (!hasAccess) {
+        return res.status(403).json({
+          message:
+            "Forbidden: You do not have permission to access this project",
+        });
+      }
+    }
+
     const project = await getProjectData(id);
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
-    res.send(project);
+
+    const responseData = {
+      project: project,
+      userRole: userRole,
+      userID: userID,
+    };
+
+    res.send(responseData);
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error while fetching project" });
   }
 });
+
+//Project Analytics
+app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
+  try {
+    const userRole = req.user.userType;
+    const id = req.params.id;
+    const userID = req.user.id;
+
+    //Check permission of they can see the project data or not
+    if (userRole !== "admin" && userRole !== "manager") {
+      const hasAccess = await isLeadingProject(userID, id);
+      if (!hasAccess) {
+        return res.status(403).json({
+          message:
+            "Forbidden: You do not have permission to access this project",
+        });
+      }
+    }
+
+    //Getting Project Data write function getProjectData
+    const projectOverviewData = await getProjectData(id);
+    if (!projectOverviewData) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    //Sawan Here
+    const doughnutData = await getAllTasksByProject(id);
+    const totalTasks = await getTotalTasksByProject(id);
+    const taskPerUser = await getUserTasksProject(id);
+    const burndownData = await getBurnDownData(id);
+    const recentActivityProject = await getRecentActivityProject(id);
+
+    const responseData = {
+      projectData: projectOverviewData,
+      userRole: userRole,
+      userID: userID,
+      doughnutData: doughnutData,
+      totalTasks: totalTasks,
+      taskPerUser: taskPerUser,
+      burndownData: burndownData,
+      recentActivityProject: recentActivityProject,
+    };
+
+    res.send(responseData);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ message: "Server error while fetching project" });
+  }
+});
+
+// Project Analytics
 
 app.post("/login", async (req, res) => {
   try {
@@ -181,8 +324,13 @@ const server = http.createServer(app);
 // Socket.IO initialization
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // frontend URL
-    methods: ["GET", "POST"]
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://34.147.242.96",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
   path: "/socket.io"
 });
