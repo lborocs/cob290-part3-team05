@@ -793,15 +793,3 @@ export async function getProjects() {
     const [rows] = await pool.query("SELECT * FROM Projects");
     return rows;
 }
-
-export async function getProjectData(id) {
-    const [rows] = await pool.query(
-        `s
-    SELECT *
-    FROM Projects
-    WHERE projectID = ?
-  `,
-        [id]
-    );
-    return rows[0];
-}
