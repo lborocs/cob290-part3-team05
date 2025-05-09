@@ -581,6 +581,7 @@ app.post('/chats/:chatID/read', async (req, res) => {
   const { chatID } = req.params;
   try {
     await markChatAsRead(userID, chatID);
+    console.log("Chat raed:", chatID)
     res.sendStatus(200);
   } catch (err) {
     console.error("Error updating ChatReads:", err);
