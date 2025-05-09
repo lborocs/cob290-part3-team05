@@ -36,6 +36,139 @@ export async function getUser(id) {
     return rows[0];
 }
 
+export async function getGanttChartData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      p.projectID,
+      p.projectTitle,
+      p.startDate,
+      p.dueDate
+    FROM 
+      UserTeams ut
+    JOIN 
+      Projects p ON ut.projectID = p.projectID
+    WHERE 
+      ut.userID = 1;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+export async function getAllTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'in progress' AND (dueDate >= CURDATE() OR dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN dueDate < CURDATE() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+    `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return {
+    toDo: rows[0]?.toDo || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    completed: rows[0]?.completed || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
+export async function getBurnDownData(id) {
+  const [rows] = await pool.query(
+    `
+      SELECT 
+      DATE(t.completionDate) AS date,
+      COUNT(t.taskID) AS count,
+      SUM(t.manHours) AS hours
+  FROM 
+      Tasks t
+  WHERE 
+      t.projectID = ? -- Replace with your project ID parameter
+      AND t.status = 'Completed'
+      AND t.completionDate IS NOT NULL
+  GROUP BY 
+      DATE(t.completionDate)
+  ORDER BY 
+      date ASC;
+  `,
+    [id]
+  );
+
+  return rows;
+}
+
+export async function getTotalTasksByProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(*) AS totalTasks
+    FROM 
+      Tasks
+    WHERE 
+      projectID = ?;
+  `,
+    [id]
+  );
+
+  // Return the first object directly instead of the array
+  return rows[0]?.totalTasks || 0;
+}
+
+export async function getRecentActivityProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      t.name AS taskName,
+      t.status AS taskStatus,
+      t.assigneeID,
+      CONCAT(u.firstName, ' ', u.lastName) AS assigneeName,
+      CASE
+        WHEN t.status = 'Completed' THEN t.completionDate
+        WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+        ELSE NULL
+      END AS activityDate,
+      CASE
+        WHEN t.status = 'Completed' THEN 'Task completed'
+        WHEN t.status = 'In Progress' THEN 'Task in progress'
+        WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN 'Task started'
+        ELSE NULL
+      END AS activityType,
+      ABS(DATEDIFF(CURDATE(), 
+        CASE
+          WHEN t.status = 'Completed' THEN t.completionDate
+          WHEN t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE() THEN t.startDate
+          ELSE CURDATE()
+        END
+      )) AS daysAgo
+    FROM 
+      Tasks t
+    LEFT JOIN
+      Users u ON t.assigneeID = u.userID
+    WHERE 
+      t.projectID = ?
+      AND (
+        (t.status = 'Completed' AND t.completionDate IS NOT NULL)
+        OR 
+        (t.status IN ('To Do', 'In Progress') AND t.startDate <= CURDATE())
+      )
+    ORDER BY 
+      daysAgo ASC, 
+      FIELD(t.status, 'Completed', 'In Progress', 'To Do') ASC
+    LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
 /*export async function createUser(userEmail, firstName, lastName, userType) {
     const [result] = await pool.query(`
     INSERT INTO Users (userEmail, firstName, lastName, userType)
@@ -154,6 +287,215 @@ export async function getChats(userID) {
     }
 }
 
+export async function isLeadingProject(userID, projectID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * FROM Projects
+    Where projectID = ? AND projectLeader = ?
+  `,
+    [projectID, userID]
+  );
+  return rows.length > 0;
+}
+
+export async function getProjectsTeamLeader(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT * From Projects
+    WHERE projectLeader = ?
+  `,
+    [userID]
+  );
+  return rows;
+}
+
+export async function getNumProjectUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numProjects
+    FROM UserTeams
+    WHERE userID = ?
+  `,
+    [userID]
+  );
+  return rows[0].numProjects;
+}
+
+export async function getNumTasksUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numTasks
+    FROM Tasks
+    WHERE assigneeId = ?
+  `,
+    [userID]
+  );
+  return rows[0].numTasks;
+}
+
+export async function getNumCompletedTasks(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT COUNT(*) as numCompletedTasks
+    FROM Tasks
+    WHERE assigneeID = ? AND status = 'Completed'
+  `,
+    [userID]
+  );
+  return rows[0].numCompletedTasks;
+}
+
+export async function getWorkLoadUser(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      ROUND(
+        (SUM(manHours) / SUM(DATEDIFF(dueDate, startDate) + 1)) 
+        / 8 * 100, 
+        1
+      ) AS workloadPercentage
+    FROM 
+      Tasks
+    WHERE 
+      assigneeId = ?
+      AND startDate IS NOT NULL 
+      AND dueDate IS NOT NULL
+      AND manHours IS NOT NULL;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return rows[0]?.workloadPercentage || 0; // Return 0 if no data is found
+}
+
+export async function getDoughnutData(userID) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      COUNT(CASE WHEN status = 'to do' THEN 1 END) AS toDo,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN status = 'in progress' THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN dueDate < NOW() AND status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Tasks
+    WHERE 
+      assigneeId = ?;
+    `,
+    [userID] // Use the userID parameter here
+  );
+  return {
+    toDo: rows[0]?.toDo || 0,
+    completed: rows[0]?.completed || 0,
+    inProgress: rows[0]?.inProgress || 0,
+    overdue: rows[0]?.overdue || 0,
+  };
+}
+
+export async function getProjectData(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      p.*,
+      CONCAT(u.firstName, ' ', u.lastName) AS leaderName,
+      u.userEmail AS leaderEmail
+    FROM 
+      Projects p
+    LEFT JOIN 
+      Users u ON p.projectLeader = u.userID
+    WHERE 
+      p.projectID = ?
+  `,
+    [id]
+  );
+  return rows[0];
+}
+
+export async function getNumTasksProj(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    p.projectID,
+    p.projectTitle,
+    COUNT(CASE WHEN t.status = 'to do' THEN 1 END) AS toDo,
+    COUNT(CASE WHEN t.status = 'in progress' THEN 1 END) AS inProgress,
+    COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+    COUNT(CASE WHEN t.dueDate < NOW() AND t.status != 'completed' THEN 1 END) AS overdue
+FROM 
+    UserTeams ut
+JOIN 
+    Projects p ON ut.projectID = p.projectID
+LEFT JOIN 
+    Tasks t ON p.projectID = t.projectID
+WHERE 
+    ut.userID = 1
+GROUP BY 
+    p.projectID, p.projectTitle
+ORDER BY 
+    p.projectTitle;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+export async function getUserTasksProject(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      u.userID,
+      CONCAT(u.firstName, ' ', u.lastName) AS employeeName,
+      u.userEmail,
+      COUNT(t.taskID) AS totalAssigned,
+      COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+      COUNT(CASE WHEN t.status = 'to do' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS toDo,
+      COUNT(CASE WHEN t.status = 'in progress' AND (t.dueDate >= CURDATE() OR t.dueDate IS NULL) THEN 1 END) AS inProgress,
+      COUNT(CASE WHEN t.dueDate < CURDATE() AND t.status != 'completed' THEN 1 END) AS overdue
+    FROM 
+      Users u
+    JOIN 
+      UserTeams ut ON u.userID = ut.userID
+    LEFT JOIN 
+      Tasks t ON t.assigneeId = u.userID AND t.projectID = ut.projectID
+    WHERE 
+      ut.projectID = ?
+    GROUP BY 
+      u.userID, u.firstName, u.lastName, u.userEmail
+    ORDER BY 
+      completed DESC, totalAssigned DESC
+    `,
+    [id]
+  );
+
+  return rows;
+}
+
+export async function getRecentActivityUser(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+    t.name AS taskName,
+    p.projectTitle AS projectName,
+    ABS(DATEDIFF(CURDATE(),
+        CASE
+            WHEN t.status = 'Completed' THEN t.completionDate
+            WHEN t.status = 'To Do' AND t.startDate <= CURDATE() THEN t.startDate
+        END
+    )) AS daysAgo
+FROM Tasks t
+JOIN Projects p ON t.projectId = p.projectId
+WHERE (
+    (t.status = 'Completed')
+    OR (t.status = 'To Do' AND t.startDate <= CURDATE())
+)
+AND t.assigneeId = ?
+ORDER BY daysAgo ASC
+LIMIT 4;
+  `,
+    [id]
+  );
+  return rows;
+}
+
+// Chat SQL Queries
 // GET /messages/:chatID
 export async function getMessages(chatID) {
     try {
@@ -261,6 +603,7 @@ export async function editMessage(messageID, newText) {
     }
 }
 
+
 // DELETE /chats/:chatID/leave/:userID
 export async function leaveGroup(chatID, userID, options = {}) {
     // 1. Fetch chat details
@@ -324,6 +667,7 @@ export async function deleteChat(chatID) {
     await pool.query(`DELETE FROM Chats WHERE chatID = ?`, [chatID]);
     return { chatID, deleted: true };
 }
+
 
 // GET /chats/:chatID/non-members 
 export async function getNonMembers(chatID) {
@@ -392,9 +736,15 @@ export async function updateGroupTitle(chatID, newTitle) {
 
 // POST /chats
 export async function createChat(chatName, chatType, creatorID, userIDList) {
-    if (chatType == "Private") {
+    // If the chat is private, we can allow chatName to be null or use a default value
+    if (chatType === "Private" && !chatName) {
+        chatName = null;  // Allow null for private chat name
+    }
+
+    // For private chat, check if a chat already exists between the two users
+    if (chatType === "Private") {
         const [userA, userB] = userIDList;
-        const [existingChats] = await pool.query(
+        const [existing] = await pool.query(
             `SELECT cu1.chatID FROM ChatUsers cu1
              JOIN ChatUsers cu2 ON cu1.chatID = cu2.chatID
              JOIN Chats c ON c.chatID = cu1.chatID
@@ -402,24 +752,45 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
              GROUP BY cu1.chatID
              HAVING COUNT(DISTINCT cu1.userID) = 2`,
             [userA, userB]
-        )
+        );
 
         if (existing.length > 0) {
             return { chatID: existing[0].chatID, alreadyExists: true };
         }
     }
-    const [result] = await pool.query(
-        `INSERT INTO Chats (chatName,chatType,creatorID) VALUES (?,?,?)`,
-        [chatName, chatType, creatorID]
-    )
-    const chatID = result.insertId;
 
+    // Insert a new chat (allow chatName to be null for private chat)
+    const [chat] = await pool.query(
+        `INSERT INTO Chats (chatName, chatType, creatorID) VALUES (?, ?, ?)`,
+        [chatName, chatType, creatorID]  // Here, `chatName` can be `null` for private chat
+    );
+
+    const chatID = chat.insertId;
+
+    // Get the creator's name
+    const [creatorName] = await pool.query(
+        `SELECT firstName, lastName FROM Users WHERE userID = ?`,
+        [creatorID]
+    );
+    const creator = creatorName[0];
+    const fullName = `${creator.firstName} ${creator.lastName}`;
+    const systemMessage = `${fullName} created a chat`;
+
+    // Insert the system message
+    const [result] = await pool.query(
+        `INSERT INTO MessagesTable (chatID, senderUserID, messageText, timestamp) VALUES (?, 0, ?, NOW())`,
+        [chatID, systemMessage]
+    );
+
+    // Add users to the chat
     for (const userID of userIDList) {
         await pool.query(
-            `INSERT INTO ChatUsers (chatID,userID,pinnedChat) VALUES (?,?,0)`,
+            `INSERT INTO ChatUsers (chatID, userID, pinnedChat) VALUES (?, ?, 0)`,
             [chatID, userID]
-        )
+        );
     }
+
+    return { chatID, alreadyExists: false, systemMessage };
 }
 
 // POST /chats/:chatID/read
@@ -454,20 +825,58 @@ export async function getUnreadMessageCounts(userID) {
     return rows;
 }
 
+// GET /users/not-in-private-with/:userID
+export async function getUsersNotInPrivateWith(userID){
+    const [userChats]= await pool.query(
+        `SELECT c.chatID 
+        FROM Chats c
+        JOIN ChatUsers cu ON cu.chatID = c.chatID
+        WHERE cu.userID = ? AND c.chatType = 'Private'
+        `,
+        [userID]
+    )
+
+    const chatIDs = userChats.map(chat => chat.chatID);
+
+    if (chatIDs.length === 0) {
+        const [users] = await pool.query(
+          `SELECT userID, firstName, lastName FROM Users WHERE userID != ? AND userID != 0`,
+          [userID]
+        );
+        return users;
+    }
+
+    const [users] = await pool.query(
+    `SELECT u.userID, u.firstName, u.lastName
+     FROM Users u
+     WHERE u.userID != ?
+        AND u.userID NOT IN (
+            SELECT cu.userID
+            FROM ChatUsers cu
+            WHERE cu.chatID IN (?)
+        )
+        AND u.userID != 0;
+         `,
+    [userID, chatIDs]
+    );
+
+    return users;
+}
+
+// GET /users/not-current/:userID
+export async function getUsersNotCurrent(userID){
+    const [users] = await pool.query(
+        `SELECT userID, firstName, lastName
+        FROM Users
+        WHERE userID != ? AND userID != 0`,
+        [userID]
+    )
+    return users
+}
+
+
 // Project functions
 export async function getProjects() {
     const [rows] = await pool.query("SELECT * FROM Projects");
     return rows;
-}
-
-export async function getProjectData(id) {
-    const [rows] = await pool.query(
-        `s
-    SELECT *
-    FROM Projects
-    WHERE projectID = ?
-  `,
-        [id]
-    );
-    return rows[0];
 }

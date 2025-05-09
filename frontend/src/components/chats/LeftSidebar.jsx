@@ -17,6 +17,7 @@ const LeftSidebar = ({
   createChat,
   handleChangeChat,
   unreadCounts,
+  currentUserID,
 }) => {
   const filteredChats = chats.filter((chat) =>
     chat.chatTitle?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,7 +108,11 @@ const LeftSidebar = ({
         )}
       </div>
       {isCreateChatOpen && (
-        <CreateChatModal onCancel={() => setIsCreateChatOpen(false)} />
+        <CreateChatModal
+          onCancel={() => setIsCreateChatOpen(false)}
+          currentUserID={currentUserID}
+          onCreateChat={createChat}
+        />
       )}
     </div>
   );

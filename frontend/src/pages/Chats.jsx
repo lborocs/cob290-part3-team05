@@ -17,10 +17,20 @@ import { FaUserAlt } from "react-icons/fa";
 import { io } from "socket.io-client";
 import { jwtDecode } from "jwt-decode";
 
+// Determine the appropriate Socket.IO server URL based on environment
+const getSocketURL = () => {
+  // In production, don't specify a URL - Socket.IO will connect to the current host
+  if (window.location.hostname !== "localhost") {
+    return undefined; // Connect to same host as the page
+  }
+  // In development, connect to local development server
+  return "http://localhost:8080";
+};
+
 // Initial WebSocket connection
-const socket = io("http://localhost:8080", {
+const socket = io(getSocketURL(), {
   transports: ["websocket", "polling"],
-  path: "/socket.io",
+  path: "/socket.io/",
   withCredentials: true,
 });
 
@@ -677,6 +687,44 @@ const Chats = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Create a chat
+  const createChat = async (chatData) => {
+    console.log(chatData);
+    try {
+      const res = await fetch(`/api/chats`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chatData),
+      });
+
+      if (!res.ok) throw new Error("Error whilst creating chat");
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+    }
+
+    fetch(`/api/chats/${currentUserID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setChats(data);
+
+        // If user has chats, auto-select the first one
+        if (data.length > 0) {
+          setChatID(data[0].chatID);
+          setChatTitle(data[0].chatTitle);
+          setChatType(data[0].chatType);
+          setCreatorID(data[0].creatorID);
+        } else {
+          // No chats available
+          setChatTitle("No chats yet");
+          setChatType(null);
+          setChatID(null);
+        }
+      })
+      .catch((error) => console.error("Error fetching chats:", error));
+  };
+
   return (
     <div className="flex h-screen w-full">
       {/* Left Sidebar */}
@@ -688,8 +736,10 @@ const Chats = () => {
         chats={chats}
         setChatID={setChatID}
         chatID={chatID}
+        createChat={createChat}
         handleChangeChat={handleChangeChat}
         unreadCounts={unreadCounts}
+        currentUserID={currentUserID}
       />
 
       {/* Middle Section */}

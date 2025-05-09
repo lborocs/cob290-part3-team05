@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import ProjectGanttChart from '../components/analytics/chart/ProjectGanttChart';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
@@ -15,12 +16,20 @@ const UserDetails = () => {
   // Sample metrics data - replace with actual API data
   const [metrics, setMetrics] = useState({
     projectsAssigned: 0,
-    projectsCompleted: 0,
     tasksAssigned: 0,
     tasksCompleted: 0,
     avgTaskCompletionTime: 0,
     currentWorkload: 0,
-    productivityScore: 0
+    productivityScore: 0,
+    doughnutData: {
+      "toDo": 1,
+      "completed": 1,
+      "inProgress": 1,
+      "overdue": 0
+    },
+    tasksByProject: [],
+    recentActivityUser: [],
+    ganttChartData: []
   });
 
   useEffect(() => {
@@ -40,30 +49,41 @@ const UserDetails = () => {
         
         console.log('Request headers:', headers);
         
-        // Adjust the API endpoint based on your backend structure
+        
         const response = await fetch(`/api/users/${userId}`, {
           method: 'GET',
           headers: headers
         });
+
+        const analyticsResponse = await fetch(`/api/users/${userId}/analytics`, {
+          method: 'GET',
+          headers: headers
+        });
         
-        if (!response.ok) {
+        if (!response.ok || !analyticsResponse.ok) {
           throw new Error(`Failed to fetch user: ${response.status}`);
         }
         
         const data = await response.json();
+        const analyticsData = await analyticsResponse.json();
+
         setUser(data);
+        
         
         // Calculate metrics from the user data
         if (data) {
           // Sample metrics calculations - replace with actual data
           setMetrics({
-            projectsAssigned: Math.floor(Math.random() * 5) + 1,
-            projectsCompleted: Math.floor(Math.random() * 4),
-            tasksAssigned: Math.floor(Math.random() * 30) + 10,
-            tasksCompleted: Math.floor(Math.random() * 20) + 5,
+            projectsAssigned: analyticsData.numProjects || 0,
+            tasksAssigned: analyticsData.numTasks || 0,
+            tasksCompleted: analyticsData.numCompletedTasks,
             avgTaskCompletionTime: Math.floor(Math.random() * 5) + 1, // days
-            currentWorkload: Math.floor(Math.random() * 100), // percentage
-            productivityScore: Math.floor(Math.random() * 50) + 50 // out of 100
+            currentWorkload: analyticsData.workLoadUser || 0, // percentage
+            productivityScore: analyticsData.productivityScore,// out of 100
+            doughnutData : analyticsData.doughnutData,
+            tasksByProject: analyticsData.taskByProject || [],
+            recentActivityUser: analyticsData.recentActivityUser || [],
+            ganttChartData: analyticsData.ganttChartData || []
           });
         }
         
@@ -99,18 +119,34 @@ const UserDetails = () => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Chart data for tasks progress
-  const tasksData = {
-    labels: ['Completed', 'Remaining'],
-    datasets: [
-      {
-        data: [metrics.tasksCompleted, metrics.tasksAssigned - metrics.tasksCompleted],
-        backgroundColor: ['#5A2777', '#E8C2F4'],
-        borderColor: ['#5A2777', '#E8C2F4'],
-        borderWidth: 1,
-      },
-    ],
-  };
+      // Transform the API data into the desired format
+    const projects = metrics.ganttChartData.map((project) => ({
+      name: project.projectTitle,
+      startDate: project.startDate.split('T')[0], // Extract date part
+      endDate: project.dueDate.split('T')[0],    // Extract date part
+    }));
+
+    console.log(projects);
+  
+
+
+    
+
+  
+    
+  
+ // Doughnut Chart with improved colors
+ const tasksData = {
+  labels: ['To Do', 'In Progress', 'Completed', 'Overdue'],
+  datasets: [
+    {
+      data: [metrics.doughnutData.toDo, metrics.doughnutData.inProgress, metrics.doughnutData.completed, metrics.doughnutData.overdue],
+      backgroundColor: ['#8e8e91', '#eab385', '#adda9d', '#f5a3a3'], // Colors for each status
+      borderColor: ['#1E6B37', '#D48F07', '#136A8C', '#B02A37'], // Darker shades for 3D effect
+      borderWidth: 1, // Slightly thicker border for better visibility
+    },
+  ],
+};
 
   // Chart data for workload distribution
   const workloadData = {
@@ -136,37 +172,95 @@ const UserDetails = () => {
     }
   };
 
-  // Monthly productivity data (sample data)
-  const monthlyProductivityData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  const taskPerProjectData = {
+    labels: metrics.tasksByProject.map((project) => project.projectTitle), // Project titles as labels
     datasets: [
       {
-        label: 'Tasks Completed',
-        data: [5, 8, 12, 7, 9, metrics.tasksCompleted], // Sample data - replace with actual
-        backgroundColor: 'rgba(90, 39, 119, 0.7)',
-        barThickness: 20,
+        label: 'To Do',
+        data: metrics.tasksByProject.map((project) => project.toDo), // To Do tasks
+        backgroundColor: '#8e8e91', // Grey
+        borderRadius: 25, // Rounded corners
+        barThickness: 40, // Adjust bar width
+      },
+      {
+        label: 'In Progress',
+        data: metrics.tasksByProject.map((project) => project.inProgress), // In Progress tasks
+        backgroundColor: '#eab385', // Amber
+        borderRadius: 25, // Rounded corners
+        barThickness: 40, // Adjust bar width
+      },
+      {
+        label: 'Completed',
+        data: metrics.tasksByProject.map((project) => project.completed), // Completed tasks
+        backgroundColor: '#adda9d', // Green
+        borderRadius: 25, // Rounded corners
+        barThickness: 40, // Adjust bar width
+      },
+      {
+        label: 'Overdue',
+        data: metrics.tasksByProject.map((project) => project.overdue), // Overdue tasks
+        backgroundColor: '#f5a3a3', // Red
+        borderRadius: 25, // Rounded corners
+        barThickness: 40, // Adjust bar width
       },
     ],
   };
 
-  // Bar chart options
+  
   const barOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Monthly Productivity'
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: {
+        font: {
+          size: 14,
+          family: 'Poppins, sans-serif', // Modern font
+        },
+        color: '#1C2341', // Dark text color
       },
     },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  };
+    title: {
+      display: true,
+      text: 'Tasks Per Project by Status',
+      font: {
+        size: 18,
+        weight: 'bold',
+        family: 'Poppins, sans-serif',
+      },
+      color: '#1C2341',
+    },
+  },
+  scales: {
+    x: {
+      stacked: true, // Stack bars horizontally
+      grid: {
+        display: false, // Hide grid lines for a cleaner look
+      },
+      ticks: {
+        font: {
+          size: 12,
+          family: 'Poppins, sans-serif',
+        },
+        color: '#2E3944',
+      },
+    },
+    y: {
+      stacked: true, // Stack bars vertically
+      beginAtZero: true,
+      grid: {
+        color: '#D9D9D9', // Light grid lines
+      },
+      ticks: {
+        font: {
+          size: 12,
+          family: 'Poppins, sans-serif',
+        },
+        color: '#2E3944',
+      },
+    },
+  },
+};
 
   if (loading) {
     return (
@@ -250,7 +344,7 @@ const UserDetails = () => {
               {metrics.projectsAssigned}
             </div>
             <div className="text-[#2E3944] text-sm mt-1">
-              {metrics.projectsCompleted} completed
+              ongoing projects
             </div>
           </div>
           
@@ -285,10 +379,10 @@ const UserDetails = () => {
         {/* Monthly Productivity Chart */}
         <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] lg:col-span-2">
           <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Monthly Productivity</h2>
+            <h2 className="text-lg font-semibold text-[#1C2341]">Tasks Per Project</h2>
           </div>
           <div className="p-4 h-64">
-            <Bar options={barOptions} data={monthlyProductivityData} />
+            <Bar options={barOptions} data={taskPerProjectData} />
           </div>
         </div>
         
@@ -303,80 +397,43 @@ const UserDetails = () => {
         </div>
       </div>
       
-      {/* Additional User Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Current Workload</h2>
-          </div>
-          <div className="p-4 h-64 flex items-center justify-center">
-            <Doughnut data={workloadData} options={chartOptions} />
-          </div>
-        </div>
-        
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-          <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-            <h2 className="text-lg font-semibold text-[#1C2341]">Assigned Projects</h2>
-          </div>
-          <div className="p-4 divide-y divide-[#D9D9D9]">
-            {/* Sample project assignments - replace with actual data */}
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Website Redesign</div>
-              <div className="text-xs text-[#2E3944]">2 tasks remaining • Due in 5 days</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Mobile App Development</div>
-              <div className="text-xs text-[#2E3944]">5 tasks remaining • Due in 14 days</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">Database Migration</div>
-              <div className="text-xs text-[#2E3944]">Completed • 3 days ago</div>
-            </div>
-            <div className="py-3">
-              <div className="text-sm font-medium text-[#1C2341]">API Integration</div>
-              <div className="text-xs text-[#2E3944]">1 task remaining • Due tomorrow</div>
-            </div>
-          </div>
-        </div>
+      <div className="mt-6 bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+      <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+        <h2 className="text-lg font-semibold text-[#1C2341]">Project Timeline</h2>
       </div>
+      <ProjectGanttChart projects={projects} />
+    </div>
+      
       
       {/* Recent Activity */}
-      <div className="mt-6 bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
-        <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
-          <h2 className="text-lg font-semibold text-[#1C2341]">Recent Activity</h2>
-        </div>
-        <div className="p-4 divide-y divide-[#D9D9D9]">
-          {/* Sample activities - replace with actual activity data */}
-          <div className="py-3 flex justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#1C2341]">Completed task "Update user authentication"</div>
-              <div className="text-xs text-[#2E3944]">Mobile App Development</div>
-            </div>
-            <div className="text-xs text-[#2E3944]">Yesterday at 3:45 PM</div>
-          </div>
-          <div className="py-3 flex justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#1C2341]">Added comment to "Fix payment gateway"</div>
-              <div className="text-xs text-[#2E3944]">E-commerce Platform</div>
-            </div>
-            <div className="text-xs text-[#2E3944]">2 days ago</div>
-          </div>
-          <div className="py-3 flex justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#1C2341]">Started task "Implement search functionality"</div>
-              <div className="text-xs text-[#2E3944]">Website Redesign</div>
-            </div>
-            <div className="text-xs text-[#2E3944]">3 days ago</div>
-          </div>
-          <div className="py-3 flex justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#1C2341]">Completed project "Database Migration"</div>
-              <div className="text-xs text-[#2E3944]">Internal Tools</div>
-            </div>
-            <div className="text-xs text-[#2E3944]">5 days ago</div>
-          </div>
-        </div>
+    <div className="mt-6 bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9]">
+      <div className="p-4 border-b border-[#D9D9D9] bg-gradient-to-r from-[#E8C2F4]/30 to-white">
+        <h2 className="text-lg font-semibold text-[#1C2341]">Recent Activity</h2>
       </div>
+      <div className="p-4 divide-y divide-[#D9D9D9]">
+        {metrics.recentActivityUser && metrics.recentActivityUser.length > 0 ? (
+          metrics.recentActivityUser.map((activity, index) => (
+            <div key={index} className="py-3 flex justify-between">
+              <div>
+                <div className="text-sm font-medium text-[#1C2341]">
+                  Completed task "{activity.taskName}"
+                </div>
+                <div className="text-xs text-[#2E3944]">{activity.projectName}</div>
+              </div>
+              <div className="text-xs text-[#2E3944]">
+                {activity.daysAgo === 0
+                  ? "Today"
+                  : activity.daysAgo === 1
+                  ? "Yesterday"
+                  : `${activity.daysAgo} days ago`}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-sm text-[#2E3944]">No recent activity available.</div>
+        )}
+      </div>
+    </div>
     </div>
   );
 };

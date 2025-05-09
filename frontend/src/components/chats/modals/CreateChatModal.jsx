@@ -3,17 +3,65 @@ import Select from "react-select";
 import { FaTimes, FaUsers, FaUserAlt } from "react-icons/fa";
 
 const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
-  const [chatTitle, setChatTitle] = useState("");
+  const [chatName, setChatName] = useState("");
   const [chatType, setChatType] = useState("Private");
   const [selectedUsers, setSelectedUsers] = useState([]);
 
-  // Mock users till tied to demonstration
-  const [availableUsers, setAvailableUsers] = useState([
-    { userID: "user1", firstName: "Binuka", lastName: "Perera" },
-    { userID: "user2", firstName: "Stephen", lastName: "Sir" },
-    { userID: "user3", firstName: "Johns", lastName: "Arc" },
-    { userID: "user4", firstName: "Spider", lastName: "Man" },
-  ]);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [availablePrivUsers, setAvailablePrivUsers] = useState([]);
+  const [availableAllUsers, setAvailableAllUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchPrivUsers = async () => {
+      try {
+        const res = await fetch(
+          `/api/users/not-in-private-with/${currentUserID}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Internal-Request": "true",
+            },
+          }
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch users");
+
+        const userData = await res.json();
+        console.log(userData);
+        setAvailablePrivUsers(userData);
+        setAvailableUsers(userData);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+
+    fetchPrivUsers();
+  }, [currentUserID]);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const res = await fetch(`/api/users/not-current/${currentUserID}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-Request": "true",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch users");
+
+        const userData = await res.json();
+        console.log(userData);
+        setAvailableAllUsers(userData);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+
+    fetchAllUsers();
+  }, [currentUserID]);
 
   // Find current user in the list
   const currentUser = availableUsers.find(
@@ -30,31 +78,37 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
 
   const handleSelectChange = (newSelection) => {
     // For Private chats, ensure only one user can be selected
-    if (chatType === "Private" && newSelection.length > 1) {
-      // Keep only the most recently added user
-      setSelectedUsers([newSelection[newSelection.length - 1]]);
+    if (chatType === "Private") {
+      if (!newSelection || newSelection.length === 0) {
+        setSelectedUsers([]);
+        setChatName("");
+      } else {
+        const selectedUser = newSelection[newSelection.length - 1];
+        setSelectedUsers([selectedUser]);
+        setChatName(selectedUser.label);
+      }
     } else {
       setSelectedUsers(newSelection);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
     // Create array of all selected user IDs, including creator
-    const userIDs = [
+    const userIDList = [
       currentUserID,
       ...selectedUsers.map((option) => option.value),
     ];
 
     const newChat = {
-      chatTitle,
+      chatName,
       chatType,
       creatorID: currentUserID,
-      userIDs,
+      userIDList,
     };
 
-    onCreateChat(newChat);
+    await onCreateChat(newChat);
     onCancel();
   };
 
@@ -82,8 +136,8 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
             </label>
             <input
               type="text"
-              value={chatTitle}
-              onChange={(e) => setChatTitle(e.target.value)}
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
               className="w-full px-3 py-2 rounded border border-gray-300 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter chat title"
               required
@@ -103,7 +157,12 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
                   name="chatType"
                   value="Private"
                   checked={chatType === "Private"}
-                  onChange={() => setChatType("Private")}
+                  onChange={() => {
+                    setChatType("Private");
+                    setAvailableUsers(availablePrivUsers);
+                    setSelectedUsers([]);
+                    setChatName("");
+                  }}
                   className="mr-2"
                 />
                 <FaUserAlt className="mr-2 text-gray-600" size={14} />
@@ -115,7 +174,11 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
                   name="chatType"
                   value="Group"
                   checked={chatType === "Group"}
-                  onChange={() => setChatType("Group")}
+                  onChange={() => {
+                    setChatType("Group");
+                    setAvailableUsers(availableAllUsers);
+                    setSelectedUsers([]);
+                  }}
                   className="mr-2"
                 />
                 <FaUsers className="mr-2 text-gray-600" size={14} />
@@ -149,7 +212,7 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
               value={selectedUsers}
               onChange={handleSelectChange}
               placeholder="Select one or more users"
-              className="mb-4 "
+              className="mb-4 text-black"
             />
 
             {chatType === "Private" && selectedUsers.length > 1 && (
@@ -163,12 +226,10 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="bg-[var(--color-overlay-dark)] text-white px-4 py-1.5 text-sm rounded hover:bg-[var(--color-overlay)] disabled:opacity-50"
+              className="bg-[var(--color-overlay-dark)] text-white px-4 py-1.5 text-sm rounded hover:bg-[var(--color-overlay)] disabled:opacity-50 disabled:hover:bg-[var(--color-overlay-dark)]"
               disabled={
-                !chatTitle ||
-                (chatType === "Private"
-                  ? selectedUsers.length !== 1
-                  : selectedUsers.length < 1)
+                (chatType === "Group" && !chatName) ||
+                (chatType === "Private" && selectedUsers.length !== 1)
               }
             >
               Create Chat
