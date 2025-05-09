@@ -1,26 +1,33 @@
 import React from "react";
 import DirectMessage from "./DirectMessage";
 
-const DirectMessageList = (props) => {
-  const directMessages = props.messages;
-  const currentChatID = props.chatID;
+const DirectMessageList = ({ messages, chatID, setChatID, unreadCounts = {} }) => {
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
-    <div className="p-4">
-      {directMessages?.length > 0 ? (
-        directMessages.map((chat) => (
+    <div className="-mx-2 px-0">
+      {messages?.length > 0 ? (
+        messages.map((chat) => (
           <DirectMessage
             key={chat.chatID}
-            senderName={chat.chatTitle}
-            time={chat.time}
-            lastMessage={chat.lastMessage}
+            title={chat.chatTitle}
+            senderName={chat.lastMessageSender}
+            messagePreview={chat.lastMessageText}
+            time={formatTime(chat.lastMessageTimestamp)}
             isPinned={chat.isPinned}
-            onClick={() => props.setChatID(chat.chatID)}
-            isActive={currentChatID === chat.chatID}
+            onClick={() => setChatID(chat.chatID)}
+            isActive={chatID === chat.chatID}
+            unreadCount={unreadCounts[chat.chatID] || 0}
           />
         ))
       ) : (
-        <p>No direct messages</p>
+        <div className="flex justify-center items-center h-32 text-white text-sm">
+          No direct messages
+        </div>
       )}
     </div>
   );

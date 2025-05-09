@@ -86,25 +86,66 @@ export async function createUser(
 // GET /chats/:userID
 export async function getChats(userID) {
     try {
-        const [rows] = await pool.query(`
-            SELECT 
-                c.chatID,
-                c.chatType,  
-                c.creatorID,
-                CASE 
-                    WHEN c.chatType = 'Group' THEN c.chatName
-                    ELSE (
-                        SELECT CONCAT(u.firstName, ' ', u.lastName)
-                        FROM ChatUsers cu
-                        JOIN Users u ON cu.userID = u.userID
-                        WHERE cu.chatID = c.chatID AND cu.userID != ?
-                        LIMIT 1
-                    )
-                END AS chatTitle
-            FROM Chats c
-            LEFT JOIN ChatUsers cu ON c.chatID = cu.chatID
-            WHERE cu.userID = ?;
-        `, [userID, userID]);
+        const [rows] = await pool.query(
+            `
+      SELECT 
+        c.chatID,
+        c.chatType,
+        c.creatorID,
+        CASE 
+          WHEN c.chatType = 'Group' THEN c.chatName
+          ELSE (
+            SELECT CONCAT(u.firstName, ' ', u.lastName)
+            FROM ChatUsers cu2
+            JOIN Users u ON cu2.userID = u.userID
+            WHERE cu2.chatID = c.chatID AND cu2.userID != ?
+            LIMIT 1
+          )
+        END AS chatTitle,
+
+        -- Subquery for last message details
+        (
+          SELECT m.messageText
+          FROM MessagesTable m
+          WHERE m.chatID = c.chatID AND m.isDeleted = 0
+          ORDER BY m.timestamp DESC
+          LIMIT 1
+        ) AS lastMessageText,
+
+       (
+  SELECT
+    CASE
+      WHEN m.senderUserID = 0 THEN ''
+      ELSE CONCAT(u.firstName, ' ', u.lastName)
+    END
+  FROM MessagesTable m
+  LEFT JOIN Users u ON m.senderUserID = u.userID
+  WHERE m.chatID = c.chatID AND m.isDeleted = 0
+  ORDER BY m.timestamp DESC
+  LIMIT 1
+) AS lastMessageSender,
+
+        (
+          SELECT m.timestamp
+          FROM MessagesTable m
+          WHERE m.chatID = c.chatID AND m.isDeleted = 0
+          ORDER BY m.timestamp DESC
+          LIMIT 1
+        ) AS lastMessageTimestamp
+
+      FROM Chats c
+      JOIN ChatUsers cu ON c.chatID = cu.chatID
+      WHERE cu.userID = ?
+      ORDER BY lastMessageTimestamp DESC
+      `,
+            [userID, userID]
+        );
+
+        for (const row of rows) {
+            if (!row.lastMessageSender) {
+                row.lastMessageSender = "";
+            }
+        }
 
         return rows;
     } catch (error) {
@@ -166,24 +207,26 @@ export async function sendMessage(chatID, senderUserID, messageText) {
 // DELETE /messages/:messageID
 export async function deleteMessage(messageID) {
     const [existing] = await pool.query(`
-        SELECT * FROM MessagesTable WHERE messageID = ?;
-    `, [messageID]);
+    SELECT chatID FROM MessagesTable WHERE messageID = ?;
+  `, [messageID]);
 
-    if (!existing.length) return false;
+    if (!existing.length) return null;
 
-    await pool.query(`
-        INSERT INTO DeletedMessagesArchive 
-        (messageID, timestampOfDeletion)
-        VALUES (?, NOW());
-    `, [messageID]);
+    const chatID = existing[0].chatID;
 
     await pool.query(`
-        UPDATE MessagesTable
-        SET isDeleted = TRUE
-        WHERE messageID = ?;
-    `, [messageID]);
+    INSERT INTO DeletedMessagesArchive 
+    (messageID, timestampOfDeletion)
+    VALUES (?, NOW());
+  `, [messageID]);
 
-    return true;
+    await pool.query(`
+    UPDATE MessagesTable
+    SET isDeleted = TRUE
+    WHERE messageID = ?;
+  `, [messageID]);
+
+    return chatID;
 }
 
 // PUT /messages/:messageID
@@ -219,7 +262,7 @@ export async function editMessage(messageID, newText) {
 }
 
 // DELETE /chats/:chatID/leave/:userID
-export async function leaveGroup(chatID, userID) {
+export async function leaveGroup(chatID, userID, options = {}) {
     // 1. Fetch chat details
     const [[chat]] = await pool.query(`
         SELECT creatorID FROM Chats WHERE chatID = ?
@@ -251,24 +294,25 @@ export async function leaveGroup(chatID, userID) {
     await pool.query(`
         DELETE FROM ChatUsers WHERE chatID = ? AND userID = ?
     `, [chatID, userID]);
-
     // 4. Add a system message
     const [[user]] = await pool.query(`
         SELECT CONCAT(firstName, ' ', lastName) AS fullName FROM Users WHERE userID = ?
     `, [userID]);
 
-    const leaveText = `${user.fullName} left the group.`;
+    const messageText = options.kickedBy
+        ? `${user.fullName} was removed from the group.`
+        : `${user.fullName} left the group.`;
 
     const [messageInsert] = await pool.query(`
-        INSERT INTO MessagesTable (senderUserID, chatID, messageText, timestamp)
-        VALUES (0, ?, ?, NOW())
-    `, [chatID, leaveText]);
+    INSERT INTO MessagesTable (senderUserID, chatID, messageText, timestamp)
+    VALUES (0, ?, ?, NOW())
+  `, [chatID, messageText]);
 
     return {
         messageID: messageInsert.insertId,
         chatID,
         senderUserID: 0,
-        messageText: leaveText,
+        messageText,
         timestamp: new Date()
     };
 }
@@ -297,6 +341,17 @@ export async function getNonMembers(chatID) {
     return rows;
 }
 
+// GET /chats/:chatID/members
+export async function getChatMembers(chatID) {
+    const [rows] = await pool.query(`
+    SELECT u.userID, u.firstName, u.lastName, u.userEmail, u.userType
+    FROM ChatUsers cu
+    JOIN Users u ON cu.userID = u.userID
+    WHERE cu.chatID = ?
+  `, [chatID]);
+    return rows;
+}
+
 // POST /chats/:chatID/members
 export async function addMemberToGroup(chatID, userID) {
     await pool.query(
@@ -310,7 +365,7 @@ export async function addMemberToGroup(chatID, userID) {
     );
     const fullName = `${user.firstName} ${user.lastName}`;
 
-    const systemMessage = `${fullName} joined the group`;
+    const systemMessage = `${fullName} joined the group.`;
 
     const [result] = await pool.query(
         `INSERT INTO MessagesTable (chatID, senderUserID, messageText, timestamp) VALUES (?, 0, ?, NOW())`,
@@ -365,6 +420,38 @@ export async function createChat(chatName, chatType, creatorID, userIDList) {
             [chatID, userID]
         )
     }
+}
+
+// POST /chats/:chatID/read
+export async function markChatAsRead(userID, chatID) {
+    await pool.query(`
+    INSERT INTO ChatReads (userID, chatID, lastReadAt)
+    VALUES (?, ?, NOW())
+    ON DUPLICATE KEY UPDATE lastReadAt = NOW()
+  `, [userID, chatID]);
+}
+
+// GET /chats/:userID/unread-counts
+export async function getUnreadMessageCounts(userID) {
+    const [rows] = await pool.query(`
+    SELECT
+      c.chatID,
+      COUNT(m.messageID) AS unreadCount
+    FROM
+      ChatUsers cu
+    JOIN Chats c ON cu.chatID = c.chatID
+    JOIN MessagesTable m ON m.chatID = c.chatID
+    LEFT JOIN ChatReads cr ON cr.chatID = c.chatID AND cr.userID = cu.userID
+    WHERE
+      cu.userID = ?
+      AND m.timestamp > IFNULL(cr.lastReadAt, 0)
+      AND m.senderUserID != ?
+      AND m.senderUserID != 0
+    GROUP BY
+      c.chatID
+  `, [userID, userID]);
+
+    return rows;
 }
 
 // Project functions

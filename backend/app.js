@@ -20,7 +20,10 @@ import {
   getNonMembers,
   addMemberToGroup,
   deleteChat,
-  createChat
+  createChat,
+  getChatMembers,
+  markChatAsRead,
+  getUnreadMessageCounts
 } from './database.js';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -195,8 +198,24 @@ io.on("connection", (socket) => {
   });
 
   // Receive and broadcast new message
-  socket.on("sendMessage", (messageData) => {
-    io.to(messageData.chatID).emit("receiveMessage", messageData);
+  socket.on("sendMessage", async (messageData) => {
+    const { senderUserID, chatID } = messageData;
+    try {
+      const sender = await getUser(senderUserID);
+      const senderName = sender?.firstName && sender?.lastName
+        ? `${sender.firstName} ${sender.lastName}`
+        : "Unknown";
+      io.to(chatID).emit("receiveMessage", {
+        ...messageData,
+        senderName,
+      });
+    } catch (error) {
+      console.error("Error getting sender for socket message:", error);
+      io.to(chatID).emit("receiveMessage", {
+        ...messageData,
+        senderName: "Unknown",
+      });
+    }
   });
 
   // Handle typing indicator
@@ -265,10 +284,11 @@ app.delete("/messages/:messageID", async (req, res) => {
   const { messageID } = req.params;
 
   try {
-    const deleted = await deleteMessage(messageID);
-    if (!deleted) {
+    const chatID = await deleteMessage(messageID);
+    if (!chatID) {
       return res.status(404).json({ message: "Message not found" });
     }
+    io.to(chatID).emit("messageDeleted", { messageID });
     res.status(200).json({ message: "Message deleted" });
   } catch (err) {
     console.error("Error deleting message:", err);
@@ -316,6 +336,17 @@ app.get("/chats/:chatID/non-members", async (req, res) => {
   }
 });
 
+app.get("/chats/:chatID/members", async (req, res) => {
+  const { chatID } = req.params;
+  try {
+    const members = await getChatMembers(chatID);
+    res.json(members);
+  } catch (err) {
+    console.error("Error fetching chat members:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.post("/chats/:chatID/members", async (req, res) => {
   const { chatID } = req.params;
   const { userID } = req.body;
@@ -323,11 +354,12 @@ app.post("/chats/:chatID/members", async (req, res) => {
   try {
     const systemMessage = await addMemberToGroup(chatID, userID);
 
-    console.log("Emitting system message:", systemMessage);
-    io.emit("receiveMessage", systemMessage);
+    // Broadcast to clients
+    io.to(chatID).emit("receiveMessage", systemMessage);
+    io.to(chatID).emit("memberUpdated", { chatID });
 
-    res.status(200).json({ success: true });
-
+    // Send the system message back, just like the remove route
+    res.status(200).json({ message: 'User added', systemMessage });
   } catch (err) {
     console.error("Error adding member:", err);
     res.status(500).json({ error: "Failed to add member" });
@@ -354,13 +386,41 @@ app.delete('/chats/:chatID/leave/:userID', async (req, res) => {
   const { chatID, userID } = req.params;
 
   try {
-    const systemMessage = await leaveGroup(chatID, userID);
+    const systemMessage = await leaveGroup(chatID, userID, { kickedBy: true });
     io.to(chatID).emit("receiveMessage", systemMessage);
-    res.status(200).json({ message: 'Left group', systemMessage });
+    io.to(chatID).emit("memberUpdated", { chatID });
+    res.status(200).json({ message: 'User removed', systemMessage });
   } catch (err) {
     console.error("Leave group error:", err.message);
-
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/chats/:chatID/read', async (req, res) => {
+  const { userID } = req.body;
+  const { chatID } = req.params;
+  try {
+    await markChatAsRead(userID, chatID);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Error updating ChatReads:", err);
+    res.status(500).json({ error: 'Failed to update ChatReads' });
+  }
+});
+
+app.get('/chats/:userID/unread-counts', async (req, res) => {
+  const { userID } = req.params;
+
+  try {
+    const rows = await getUnreadMessageCounts(userID);
+    const counts = {};
+    rows.forEach(row => {
+      counts[row.chatID] = row.unreadCount;
+    });
+    res.json(counts);
+  } catch (err) {
+    console.error("Failed to fetch unread message counts:", err);
+    res.status(500).json({ error: "Failed to fetch unread counts" });
   }
 });
 

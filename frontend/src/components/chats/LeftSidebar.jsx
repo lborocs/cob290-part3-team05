@@ -16,16 +16,21 @@ const LeftSidebar = ({
   chatID,
   createChat,
   handleChangeChat,
+  unreadCounts,
 }) => {
-  const directMessages = chats.filter((chat) => chat.chatType === "Private");
-  const groupMessages = chats.filter((chat) => chat.chatType === "Group");
+  const filteredChats = chats.filter((chat) =>
+    chat.chatTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const directMessages = filteredChats.filter((chat) => chat.chatType === "Private");
+  const groupMessages = filteredChats.filter((chat) => chat.chatType === "Group");
   const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
 
   useEffect(() => {
     if (chats.length > 0) {
-      handleChangeChat(chats[0].chatID); // First chat in the array
+      handleChangeChat(chats[0].chatID);
     } else {
-      handleChangeChat(null); // Error handling (No chats available)
+      handleChangeChat(null);
     }
   }, []);
 
@@ -53,11 +58,10 @@ const LeftSidebar = ({
         {["direct", "groups"].map((tab) => (
           <button
             key={tab}
-            className={`relative flex-1 text-sm text-center py-1 ${
-              activeTab === tab
-                ? "font-bold text-white"
-                : "text-[var(--color-white)]"
-            }`}
+            className={`relative flex-1 text-sm text-center py-1 ${activeTab === tab
+              ? "font-bold text-white"
+              : "text-[var(--color-white)]"
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab.toUpperCase()}
@@ -90,6 +94,7 @@ const LeftSidebar = ({
             messages={directMessages}
             setChatID={handleChangeChat}
             chatID={chatID}
+            unreadCounts={unreadCounts}
           />
         ) : (
           <GroupMessageList
@@ -97,6 +102,7 @@ const LeftSidebar = ({
             messages={groupMessages}
             setChatID={handleChangeChat}
             chatID={chatID}
+            unreadCounts={unreadCounts}
           />
         )}
       </div>

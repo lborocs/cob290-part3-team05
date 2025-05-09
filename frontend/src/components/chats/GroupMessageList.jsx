@@ -1,28 +1,33 @@
 import React from "react";
 import GroupMessage from "./GroupMessage";
 
-const GroupMessageList = (props) => {
-  const groupMessages = props.messages;
-  const currentChatID = props.chatID;
-  console.log("Prop", props.chatID);
-  console.log("Curr", currentChatID);
+const GroupMessageList = ({ messages, chatID, setChatID, unreadCounts = {} }) => {
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
-    <div className="p-4">
-      {groupMessages?.length > 0 ? (
-        groupMessages.map((chat) => (
+    <div className="-mx-2 px-0">
+      {messages?.length > 0 ? (
+        messages.map((chat) => (
           <GroupMessage
             key={chat.chatID}
-            chatID={chat.chatID}
             groupName={chat.chatTitle}
-            time={chat.time}
-            lastMessage={chat.lastMessage}
+            senderName={chat.lastMessageSender}
+            messagePreview={chat.lastMessageText}
+            time={formatTime(chat.lastMessageTimestamp)}
             isPinned={chat.isPinned}
-            onClick={() => props.setChatID(chat.chatID)}
-            isActive={currentChatID === chat.chatID}
+            onClick={() => setChatID(chat.chatID)}
+            isActive={chatID === chat.chatID}
+            unreadCount={unreadCounts[chat.chatID] || 0}
           />
         ))
       ) : (
-        <p>No groups available</p>
+        <div className="flex justify-center items-center h-32 text-white text-sm">
+          No group messages
+        </div>
       )}
     </div>
   );
