@@ -24,8 +24,18 @@ import { io } from "socket.io-client";
 import { EditMessage } from "../components/chats/chat-middle-components/EditMessage";
 import { jwtDecode } from "jwt-decode";
 
+// Determine the appropriate Socket.IO server URL based on environment
+const getSocketURL = () => {
+  // In production, don't specify a URL - Socket.IO will connect to the current host
+  if (window.location.hostname !== "localhost") {
+    return undefined; // Connect to same host as the page
+  }
+  // In development, connect to local development server
+  return "http://localhost:8080";
+};
+
 // Initial WebSocket connection
-const socket = io("http://localhost:8080", {
+const socket = io(getSocketURL(), {
   transports: ["websocket", "polling"],
   path: "/socket.io/",
   withCredentials: true,
