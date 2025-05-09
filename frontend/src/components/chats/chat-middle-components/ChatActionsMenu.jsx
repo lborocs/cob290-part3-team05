@@ -9,7 +9,6 @@ const ChatActionsMenu = ({
     currentUserID,
     onFind,
     onPin,
-    onMute,
     onDelete,
     onLeaveGroup,
 }) => {
@@ -54,10 +53,6 @@ const ChatActionsMenu = ({
                     <button className={normalItem} onClick={() => handleAction(onPin)}>
                         <BsPinAngleFill size={14} />
                         <span>Pin</span>
-                    </button>
-                    <button className={normalItem} onClick={() => handleAction(onMute)}>
-                        <FaBellSlash size={14} />
-                        <span>Mute</span>
                     </button>
 
                     {chatType === "Group" && (

@@ -10,7 +10,7 @@ const ConfirmModal = ({ message, onCancel, onConfirm }) => {
                 <div className="flex justify-end gap-3">
                     <button
                         onClick={onCancel}
-                        className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-100"
+                        className="px-4 py-1.5 text-sm rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
                     >
                         Cancel
                     </button>
