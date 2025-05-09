@@ -40,7 +40,7 @@ import {
   createChat,
   getChatMembers,
   markChatAsRead,
-  getUnreadMessageCounts
+  getUnreadMessageCounts,
   getUsersNotInPrivateWith,
   getUsersNotCurrent
 } from "./database.js";
