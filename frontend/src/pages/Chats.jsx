@@ -35,7 +35,6 @@ const socket = io(getSocketURL(), {
 });
 
 const Chats = () => {
-
   const token = localStorage.getItem("token");
   const decodedToken = jwtDecode(token);
   const currentUserID = decodedToken.id;
@@ -68,6 +67,7 @@ const Chats = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [membersArray, setMembersArray] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [attachment, setAttachment] = useState(null);
 
   // Message editing state
   const [editingMessageID, setEditingMessageID] = useState(null);
@@ -125,7 +125,7 @@ const Chats = () => {
 
   const handleChangeChat = async (chatID) => {
     // Clear unread badge
-    setUnreadCounts(prev => {
+    setUnreadCounts((prev) => {
       const updated = { ...prev };
       delete updated[chatID];
       return updated;
@@ -183,12 +183,12 @@ const Chats = () => {
       socket.emit("joinChat", chatID);
 
       const res = await fetch(`/api/chats/${chatID}/leave/${userID}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to remove user');
+        throw new Error(data.error || "Failed to remove user");
       }
 
       const { systemMessage } = await res.json();
@@ -201,7 +201,6 @@ const Chats = () => {
       const updatedChatsRes = await fetch(`/api/chats/${currentUserID}`);
       const updatedChats = await updatedChatsRes.json();
       setChats(updatedChats);
-
     } catch (error) {
       console.error("Error removing member:", error);
       alert(error.message);
@@ -221,9 +220,7 @@ const Chats = () => {
       setChatTitle(newTitle);
       setChats((prevChats) =>
         prevChats.map((chat) =>
-          chat.chatID === chatID
-            ? { ...chat, chatTitle: newTitle }
-            : chat
+          chat.chatID === chatID ? { ...chat, chatTitle: newTitle } : chat
         )
       );
     } catch (err) {
@@ -257,11 +254,15 @@ const Chats = () => {
       }
 
       setChats((prevChats) => {
-        const filteredChats = prevChats.filter((chat) => chat.chatID !== chatID);
+        const filteredChats = prevChats.filter(
+          (chat) => chat.chatID !== chatID
+        );
         setChats(filteredChats);
 
         const filteredByTab = filteredChats.filter((chat) =>
-          activeTab === "direct" ? chat.chatType === "Private" : chat.chatType === "Group"
+          activeTab === "direct"
+            ? chat.chatType === "Private"
+            : chat.chatType === "Group"
         );
 
         if (filteredByTab.length > 0) {
@@ -275,6 +276,30 @@ const Chats = () => {
     } catch (err) {
       console.error("Failed to leave group:", err.message);
       alert(err.message);
+    }
+  };
+
+  const downloadAttachment = async (attachmentID, fileName) => {
+    try {
+      const token = localStorage.getItem("token"); // Or however you store your JWT
+      const response = await fetch(`/api/messages/${attachmentID}/attachment`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to download");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download error:", err);
     }
   };
 
@@ -317,35 +342,37 @@ const Chats = () => {
       setChats(updatedChats);
 
       fetchNonMembers(); // Refresh list of people you can add
-
     } catch (err) {
       console.error("Error adding user:", err);
       alert(err.message);
     }
   };
 
-
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || isSending) return;
+    if ((!newMessage.trim() && !attachment) || isSending) return;
     setIsSending(true);
 
-    const messageData = {
-      senderUserID: currentUserID,
-      chatID,
-      messageText: newMessage.trim(),
-    };
-
     try {
+      const formData = new FormData();
+      formData.append("senderUserID", currentUserID);
+      formData.append("chatID", chatID);
+      formData.append("messageText", newMessage.trim());
+
+      if (attachment) {
+        formData.append("file", attachment); // 'file' must match multer's field name
+      }
+
       const response = await fetch(`/api/chats/${chatID}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageData),
+        body: formData, // No content-type header needed; browser sets it automatically
       });
+
       if (!response.ok) throw new Error("Failed to send message");
 
       const savedMessage = await response.json();
       socket.emit("sendMessage", savedMessage);
       setNewMessage("");
+      setAttachment(null);
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -366,8 +393,8 @@ const Chats = () => {
           )
         );
 
-        const updatedChats = await fetch(`/api/chats/${currentUserID}`).then((res) =>
-          res.json()
+        const updatedChats = await fetch(`/api/chats/${currentUserID}`).then(
+          (res) => res.json()
         );
         setChats(updatedChats);
       } else {
@@ -387,12 +414,16 @@ const Chats = () => {
       if (!res.ok) throw new Error("Failed to delete chat");
 
       setChats((prevChats) => {
-        const filteredChats = prevChats.filter((chat) => chat.chatID !== chatID);
+        const filteredChats = prevChats.filter(
+          (chat) => chat.chatID !== chatID
+        );
         setChats(filteredChats);
 
         // Determine next chat based on current tab
         const filteredByTab = filteredChats.filter((chat) =>
-          activeTab === "direct" ? chat.chatType === "Private" : chat.chatType === "Group"
+          activeTab === "direct"
+            ? chat.chatType === "Private"
+            : chat.chatType === "Group"
         );
 
         if (filteredByTab.length > 0) {
@@ -437,11 +468,12 @@ const Chats = () => {
         prevChats.map((chat) =>
           chat.chatID === chatID
             ? {
-              ...chat,
-              lastMessageText: editText,
-              lastMessageTimestamp: updatedMessage.timestamp || new Date().toISOString(),
-              lastMessageSender: currentUserName,
-            }
+                ...chat,
+                lastMessageText: editText,
+                lastMessageTimestamp:
+                  updatedMessage.timestamp || new Date().toISOString(),
+                lastMessageSender: currentUserName,
+              }
             : chat
         )
       );
@@ -470,7 +502,7 @@ const Chats = () => {
       socket.emit("joinChat", chatID);
     };
 
-    const onDisconnect = () => { };
+    const onDisconnect = () => {};
 
     const onConnectError = (err) => {
       console.error("Connection error:", err.message);
@@ -480,7 +512,8 @@ const Chats = () => {
     const onReceiveMessage = (message) => {
       const isSystemMessage = message.senderUserID === 0;
       const isCurrentChat = String(message.chatID) === String(chatID);
-      const isOwnSystemMessage = String(message.triggeredBy) === String(currentUserID);
+      const isOwnSystemMessage =
+        String(message.triggeredBy) === String(currentUserID);
 
       if (isSystemMessage) {
         if (isCurrentChat) {
@@ -506,7 +539,9 @@ const Chats = () => {
             return chat;
           });
 
-          const updatedChat = updatedChats.find((c) => c.chatID === message.chatID);
+          const updatedChat = updatedChats.find(
+            (c) => c.chatID === message.chatID
+          );
           const rest = updatedChats.filter((c) => c.chatID !== message.chatID);
           return [updatedChat, ...rest];
         });
@@ -537,7 +572,9 @@ const Chats = () => {
           return chat;
         });
 
-        const updatedChat = updatedChats.find((c) => c.chatID === message.chatID);
+        const updatedChat = updatedChats.find(
+          (c) => c.chatID === message.chatID
+        );
         const rest = updatedChats.filter((c) => c.chatID !== message.chatID);
         return [updatedChat, ...rest];
       });
@@ -634,7 +671,7 @@ const Chats = () => {
       .then((data) => {
         setChats(data);
 
-        const directChats = data.filter(chat => chat.chatType === "Private");
+        const directChats = data.filter((chat) => chat.chatType === "Private");
 
         if (directChats.length > 0) {
           const firstDirect = directChats[0];
@@ -805,6 +842,7 @@ const Chats = () => {
               searchIndex={searchIndex}
               filteredIndexes={filteredIndexes}
               highlightText={highlightText}
+              handleDownload={downloadAttachment}
             />
 
             {Object.keys(typingUsers).length > 0 && (
@@ -830,6 +868,8 @@ const Chats = () => {
             currentUserName={currentUserName}
             chatID={chatID}
             socket={socket}
+            setAttachment={setAttachment}
+            attachment={attachment}
           />
         </div>
       ) : (
@@ -838,9 +878,12 @@ const Chats = () => {
             <div className="w-16 h-16 rounded-full bg-white/30 flex items-center justify-center">
               <FaUserAlt className="text-white text-2xl" />
             </div>
-            <h2 className="text-white text-lg font-semibold">No chat selected</h2>
+            <h2 className="text-white text-lg font-semibold">
+              No chat selected
+            </h2>
             <p className="text-white/80 text-sm max-w-sm">
-              To start a conversation, select a chat from the sidebar or create a new one.
+              To start a conversation, select a chat from the sidebar or create
+              a new one.
             </p>
           </div>
         </div>
@@ -851,8 +894,14 @@ const Chats = () => {
         <RightSidebar
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          selectedChat={{ chatID, chatType, chatTitle, members: membersArray, creatorID }}
-          selectedUser={membersArray.find(u => u.userID !== currentUserID)}
+          selectedChat={{
+            chatID,
+            chatType,
+            chatTitle,
+            members: membersArray,
+            creatorID,
+          }}
+          selectedUser={membersArray.find((u) => u.userID !== currentUserID)}
           onRenameGroup={handleRenameGroup}
           members={membersArray}
           currentUserID={currentUserID}

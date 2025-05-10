@@ -498,32 +498,82 @@ LIMIT 4;
 // Chat SQL Queries
 // GET /messages/:chatID
 export async function getMessages(chatID) {
-    try {
-        const [rows] = await pool.query(`
-            SELECT 
-                m.messageID,
-                m.senderUserID,
-                CONCAT(u.firstName, ' ', u.lastName) AS senderName,  
-                m.chatID,
-                m.messageText,
-                m.timestamp, 
-                m.isDeleted,
-                m.isEdited
-            FROM MessagesTable m
-            JOIN Users u ON m.senderUserID = u.userID
-            WHERE m.chatID = ?
-            ORDER BY m.timestamp ASC;  
-        `, [chatID]);
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        m.messageID,
+        m.senderUserID,
+        CONCAT(u.firstName, ' ', u.lastName) AS senderName,  
+        m.chatID,
+        m.messageText,
+        m.timestamp, 
+        m.isDeleted,
+        m.isEdited,
+        a.attachmentID,
+        a.fileName,
+        a.fileType,
+        a.fileSize,
+        a.uploadedAt
+      FROM MessagesTable m
+      JOIN Users u ON m.senderUserID = u.userID
+      LEFT JOIN MessageAttachments a ON m.messageID = a.messageID
+      WHERE m.chatID = ?
+      ORDER BY m.timestamp ASC
+      `,
+      [chatID]
+    );
 
-        return rows.map((msg) => ({
-            ...msg,
-            isEdited: Boolean(msg.isEdited),
-            isDeleted: Boolean(msg.isDeleted),
-        }));
-    } catch (error) {
-        console.error("Error fetching messages:", error.message);
-        return [];
+    const messagesMap = new Map();
+
+    for (const row of rows) {
+      const {
+        messageID,
+        senderUserID,
+        senderName,
+        chatID,
+        messageText,
+        timestamp,
+        isDeleted,
+        isEdited,
+        attachmentID,
+        fileName,
+        fileType,
+        fileSize,
+        uploadedAt,
+      } = row;
+
+      if (!messagesMap.has(messageID)) {
+        messagesMap.set(messageID, {
+          messageID,
+          senderUserID,
+          senderName,
+          chatID,
+          messageText,
+          timestamp,
+          isDeleted: Boolean(isDeleted),
+          isEdited: Boolean(isEdited),
+          attachments: [],
+        });
+      }
+
+      if (attachmentID) {
+        messagesMap.get(messageID).attachments.push({
+          attachmentID,
+          fileName,
+          fileType,
+          fileSize,
+          uploadedAt,
+          downloadUrl: `/api/messages/${attachmentID}/attachment`, // adjust as needed
+        });
+      }
     }
+
+    return Array.from(messagesMap.values());
+  } catch (error) {
+    console.error("Error fetching messages:", error.message);
+    return [];
+  }
 }
 
 // POST /messages
@@ -872,6 +922,24 @@ export async function getUsersNotCurrent(userID){
         [userID]
     )
     return users
+}
+
+// POST /attachment/:messageID
+export async function insertAttachment({ messageID, fileName, fileType, fileSize, fileData }) {
+  await pool.query(
+    `INSERT INTO MessageAttachments (messageID, fileName, fileType, fileSize, fileData, uploadedAt)
+     VALUES (?, ?, ?, ?, ?, NOW())`,
+    [messageID, fileName, fileType, fileSize, fileData]
+  );
+}
+
+// GET /messages/:attachmentID/attachment
+export async function getAttachmentById(attachmentID) {
+  const [rows] = await pool.query(
+    `SELECT fileName, fileType, fileData FROM MessageAttachments WHERE attachmentID = ?`,
+    [attachmentID]
+  );
+  return rows[0];
 }
 
 

@@ -3,6 +3,7 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import multer from "multer";
 import {
   getUsers,
   getUser,
@@ -42,13 +43,17 @@ import {
   markChatAsRead,
   getUnreadMessageCounts,
   getUsersNotInPrivateWith,
-  getUsersNotCurrent
+  getUsersNotCurrent,
+  insertAttachment,
+  getAttachmentById
 } from "./database.js";
 import http from 'http';
 import { Server } from 'socket.io';
 
 
 const app = express();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Note ".env" is a local only file which is why there won't be one when we clone from repo
 dotenv.config({ path: "./.env" });
@@ -401,19 +406,32 @@ app.get("/chats/:chatID/messages", async (req, res) => {
   }
 });
 
-app.post("/chats/:chatID/messages", async (req, res) => {
+app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
   try {
     const { chatID } = req.params;
     const { senderUserID, messageText } = req.body;
+    const file = req.file;
 
-    if (!senderUserID || !messageText.trim()) {
-      return res.status(400).json({ message: "senderUserID and messageText are required." });
+    if (!senderUserID || (!messageText && !file)) {
+      return res.status(400).json({ message: "Message text or file required." });
     }
 
-    const newMessage = await sendMessage(chatID, senderUserID, messageText);
+    // Step 1: Insert the message
+    const newMessage = await sendMessage(chatID, senderUserID, messageText || "");
 
     if (!newMessage) {
       return res.status(500).json({ message: "Failed to send message" });
+    }
+
+    // Step 2: If file uploaded, save it to DB
+    if (file) {
+      await insertAttachment({
+        messageID: newMessage.messageID,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        fileData: file.buffer, // from multer memory storage
+      });
     }
 
     res.status(201).json({
@@ -581,7 +599,7 @@ app.post('/chats/:chatID/read', async (req, res) => {
   const { chatID } = req.params;
   try {
     await markChatAsRead(userID, chatID);
-    console.log("Chat raed:", chatID)
+    console.log("Chat read:", chatID)
     res.sendStatus(200);
   } catch (err) {
     console.error("Error updating ChatReads:", err);
@@ -614,6 +632,24 @@ app.delete('/chats/:chatID', async (req, res) => {
   } catch (err) {
     console.error("Delete chat error:", err);
     res.status(500).json({ error: "Failed to delete chat" });
+  }
+});
+
+// Download attachment by attachment ID
+app.get('/messages/:attachmentID/attachment', authenticateToken, async (req, res) => {
+  const { attachmentID } = req.params;
+
+  try {
+    const file = await getAttachmentById(attachmentID);
+
+    if (!file) return res.status(404).send('Attachment not found');
+
+    res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    res.setHeader('Content-Type', file.fileType);
+    res.send(file.fileData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database error');
   }
 });
 
