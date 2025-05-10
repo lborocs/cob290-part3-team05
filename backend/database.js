@@ -926,11 +926,15 @@ export async function getUsersNotCurrent(userID){
 
 // POST /attachment/:messageID
 export async function insertAttachment({ messageID, fileName, fileType, fileSize, fileData }) {
-  await pool.query(
+  const [result] = await pool.query(
     `INSERT INTO MessageAttachments (messageID, fileName, fileType, fileSize, fileData, uploadedAt)
      VALUES (?, ?, ?, ?, ?, NOW())`,
     [messageID, fileName, fileType, fileSize, fileData]
   );
+
+  const attachmentID = result.insertId
+
+  return attachmentID
 }
 
 // GET /messages/:attachmentID/attachment

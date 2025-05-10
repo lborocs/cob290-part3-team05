@@ -473,7 +473,7 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
 
     // Step 2: If a file was uploaded, insert the file as a separate record in the attachments table
     if (file) {
-      await insertAttachment({
+      const attachmentID = await insertAttachment({
         messageID: newMessage.messageID,
         fileName: file.originalname,
         fileType: file.mimetype,
@@ -494,6 +494,7 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
     // Include attachment information if present
     if (file) {
       response.attachment = {
+        attachmentID: attachmentID,
         fileName: file.originalname,
         fileType: file.mimetype,
         fileSize: file.size,
