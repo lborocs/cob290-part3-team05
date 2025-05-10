@@ -148,20 +148,6 @@ const MessageList = ({
                         )}
                         {msg.attachment !== null && (
                           <>
-                            {msg.attachment.fileType === "application/pdf" && (
-                              <div className="flex flex-col items-center space-y-2">
-                                <span className="text-sm text-gray-600">
-                                  PDF Preview:
-                                </span>
-                                <embed
-                                  src={`/api/messages/${msg.attachment.attachmentID}/attachment`}
-                                  type="application/pdf"
-                                  width="100%"
-                                  height="300px"
-                                  className="border rounded-lg"
-                                />
-                              </div>
-                            )}
                             {console.log(msg.attachment.fileType)}
                             <MediaComponent msg={msg} />
 
