@@ -120,6 +120,7 @@ const Login = () => {
           // Store the token in localStorage for future API requests
           localStorage.setItem("token", data.accessToken);
           localStorage.setItem("user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("authChanged"));
           console.log("Login successful, navigating to dashboard");
           navigate("/"); // Go to dashboard page
         } else {

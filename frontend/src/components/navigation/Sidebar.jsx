@@ -15,10 +15,6 @@ import { FaArrowRight } from "react-icons/fa6";
 import logo from "../../assets/img/make-it-all-icon.png";
 import SidebarButton from "./SidebarButton";
 
-const USER = JSON.parse(localStorage.getItem("user"));
-const USER_TYPE = USER?.userType;
-const USER_ID = USER?.id;
-
 const ProfileIcon = ({ user }) => {
   const name = user.firstName + " " + user.lastName;
   const [first, last] = name.split(" ");
@@ -31,6 +27,9 @@ const ProfileIcon = ({ user }) => {
 };
 
 export const Sidebar = () => {
+  const USER = JSON.parse(localStorage.getItem("user"));
+  const USER_TYPE = USER?.userType;
+  const USER_ID = USER?.id;
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -90,9 +89,16 @@ export const Sidebar = () => {
   ];
 
   // Filter menu items based on userType
-const filteredMenuItems = menuItems.filter(
-  (item) => !item.allowedFor || item.allowedFor.includes(user?.userType)
-);
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (!item.allowedFor) return true; // No restrictions, include item
+    if (item.allowedFor.includes(user?.userType)) return true; // Allowed userType
+    if (
+      item.path === "/analytics" &&
+      (USER?.isLeadingProjects || USER_TYPE === "Manager")
+    )
+      return true; // Special access to analytics
+    return false; // Otherwise, exclude
+  });
 
   // Sidebar expansion useState
   const [expanded, setExpanded] = useState(true);
@@ -108,6 +114,8 @@ const filteredMenuItems = menuItems.filter(
   // Sign out function
   const signOut = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authChanged"));
     navigate("/login");
   };
 
