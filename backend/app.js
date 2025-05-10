@@ -45,7 +45,8 @@ import {
   getUsersNotInPrivateWith,
   getUsersNotCurrent,
   insertAttachment,
-  getAttachmentById
+  getAttachmentById,
+  getAttachmentsForMessage
 } from "./database.js";
 import http from 'http';
 import { Server } from 'socket.io';
@@ -421,8 +422,32 @@ app.get("/chats/:userID", async (req, res) => {
 app.get("/chats/:chatID/messages", async (req, res) => {
   try {
     const chatID = req.params.chatID;
+
+    // Get messages for the chat
     const messages = await getMessages(chatID);
-    res.json(messages);
+
+    // Fetch attachments for each message (if any)
+    const messagesWithAttachments = await Promise.all(
+      messages.map(async (message) => {
+        // Get the attachment for the message (if any)
+        const attachments = await getAttachmentsForMessage(message.messageID);
+
+        // Construct the message with attachment details
+        return {
+          ...message,
+          attachment: attachments.length > 0 ? {
+            attachmentID: attachments[0].attachmentID,
+            fileName: attachments[0].fileName,
+            fileType: attachments[0].fileType,
+            fileSize: attachments[0].fileSize,
+            downloadUrl: `/messages/${attachments[0].attachmentID}/attachment`,
+          } : null, // Include attachment data or null if no attachment
+        };
+      })
+    );
+
+    // Return the messages with attachment data
+    res.json(messagesWithAttachments);
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Database error" });

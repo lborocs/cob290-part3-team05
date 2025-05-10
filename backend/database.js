@@ -942,6 +942,21 @@ export async function getAttachmentById(attachmentID) {
   return rows[0];
 }
 
+export async function getAttachmentsForMessage(messageID) {
+  try {
+    const [attachments] = await pool.query(`
+      SELECT attachmentID, fileName, fileType, fileSize
+      FROM MessageAttachments
+      WHERE messageID = ?
+    `, [messageID]);
+
+    return attachments; // Returns an array of attachments (could be empty)
+  } catch (error) {
+    console.error("Error fetching attachments:", error);
+    return [];
+  }
+}
+
 
 // Project functions
 export async function getProjects() {

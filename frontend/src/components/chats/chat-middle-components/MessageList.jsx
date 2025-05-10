@@ -143,17 +143,23 @@ const MessageList = ({
                           searchQuery,
                           filteredIndexes[searchIndex] === index
                         )}
-                        {msg.attachment && (
-                          <ul className="space-y-1 mt-2">
-                            <li key={msg.attachment.attachmentID}>
-                              <a
-                                href={msg.attachment.downloadUrl} // Link to the download URL
-                                download={msg.attachment.fileName}
-                                className="text-blue-500 underline text-xs flex items-center gap-1"
-                              >
-                                📎 {msg.attachment.fileName}
-                              </a>
-                            </li>
+                        {msg.attachments?.length > 0 && (
+                          <ul className="space-y-1">
+                            {msg.attachments.map((file) => (
+                              <li key={msg.attachment.attachmentID}>
+                                <button
+                                  onClick={() =>
+                                    handleDownload(
+                                      msg.attachment.attachmentID,
+                                      msg.attachment.fileName
+                                    )
+                                  }
+                                  className="text-blue-500 underline text-xs flex items-center gap-1"
+                                >
+                                  📎 {msg.attachment.fileName}
+                                </button>
+                              </li>
+                            ))}
                           </ul>
                         )}
                       </div>
