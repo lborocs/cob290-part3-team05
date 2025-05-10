@@ -412,35 +412,47 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
     const { senderUserID, messageText } = req.body;
     const file = req.file;
 
-    if (!senderUserID || (!messageText && !file)) {
+    if (!senderUserID || (!messageText.trim() && !file)) {
       return res.status(400).json({ message: "Message text or file required." });
     }
 
-    // Step 1: Insert the message
-    const newMessage = await sendMessage(chatID, senderUserID, messageText || "");
+    // Step 1: Insert the message without the file
+    const newMessage = await sendMessage(chatID, senderUserID, messageText.trim() || "");
 
     if (!newMessage) {
       return res.status(500).json({ message: "Failed to send message" });
     }
 
-    // Step 2: If file uploaded, save it to DB
+    // Step 2: If a file was uploaded, insert the file as a separate record in the attachments table
     if (file) {
       await insertAttachment({
         messageID: newMessage.messageID,
         fileName: file.originalname,
         fileType: file.mimetype,
         fileSize: file.size,
-        fileData: file.buffer, // from multer memory storage
+        fileData: file.buffer, // Storing file data in memory (this could be changed to store on disk or cloud storage)
       });
     }
 
-    res.status(201).json({
+    // Step 3: Respond with message details and attachment (if available)
+    const response = {
       messageID: newMessage.messageID,
       senderUserID: newMessage.senderUserID,
       chatID: newMessage.chatID,
       messageText: newMessage.messageText,
       timestamp: newMessage.timestamp,
-    });
+    };
+
+    // Include attachment information if present
+    if (file) {
+      response.attachment = {
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+      };
+    }
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error("Error sending message:", error);
