@@ -498,32 +498,83 @@ LIMIT 4;
 // Chat SQL Queries
 // GET /messages/:chatID
 export async function getMessages(chatID) {
-    try {
-        const [rows] = await pool.query(`
-            SELECT 
-                m.messageID,
-                m.senderUserID,
-                CONCAT(u.firstName, ' ', u.lastName) AS senderName,  
-                m.chatID,
-                m.messageText,
-                m.timestamp, 
-                m.isDeleted,
-                m.isEdited
-            FROM MessagesTable m
-            JOIN Users u ON m.senderUserID = u.userID
-            WHERE m.chatID = ?
-            ORDER BY m.timestamp ASC;  
-        `, [chatID]);
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        m.messageID,
+        m.senderUserID,
+        CONCAT(u.firstName, ' ', u.lastName) AS senderName,  
+        m.chatID,
+        m.messageText,
+        m.timestamp, 
+        m.isDeleted,
+        m.isEdited,
+        a.attachmentID,
+        a.fileName,
+        a.fileType,
+        a.fileSize,
+        a.uploadedAt
+      FROM MessagesTable m
+      JOIN Users u ON m.senderUserID = u.userID
+      LEFT JOIN MessageAttachments a ON m.messageID = a.messageID
+      WHERE m.chatID = ?
+      ORDER BY m.timestamp ASC
+      `,
+      [chatID]
+    );
 
-        return rows.map((msg) => ({
-            ...msg,
-            isEdited: Boolean(msg.isEdited),
-            isDeleted: Boolean(msg.isDeleted),
-        }));
-    } catch (error) {
-        console.error("Error fetching messages:", error.message);
-        return [];
+    const messagesMap = new Map();
+
+    for (const row of rows) {
+      const {
+        messageID,
+        senderUserID,
+        senderName,
+        chatID,
+        messageText,
+        timestamp,
+        isDeleted,
+        isEdited,
+        attachmentID,
+        fileName,
+        fileType,
+        fileSize,
+        uploadedAt,
+      } = row;
+
+      if (!messagesMap.has(messageID)) {
+        messagesMap.set(messageID, {
+          messageID,
+          senderUserID,
+          senderName,
+          chatID,
+          messageText,
+          timestamp,
+          isDeleted: Boolean(isDeleted),
+          isEdited: Boolean(isEdited),
+          attachment: null,
+        });
+      }
+
+      // If the message has an attachment, set it as an object on the message
+      if (attachmentID) {
+        messagesMap.get(messageID).attachment = {
+          attachmentID,
+          fileName,
+          fileType,
+          fileSize,
+          uploadedAt,
+          downloadUrl: `/api/messages/${attachmentID}/attachment`, // Adjust download URL
+        };
+      }
     }
+
+    return Array.from(messagesMap.values());
+  } catch (error) {
+    console.error("Error fetching messages:", error.message);
+    return [];
+  }
 }
 
 // POST /messages
@@ -872,6 +923,43 @@ export async function getUsersNotCurrent(userID){
         [userID]
     )
     return users
+}
+
+// POST /attachment/:messageID
+export async function insertAttachment({ messageID, fileName, fileType, fileSize, fileData }) {
+  const [result] = await pool.query(
+    `INSERT INTO MessageAttachments (messageID, fileName, fileType, fileSize, fileData, uploadedAt)
+     VALUES (?, ?, ?, ?, ?, NOW())`,
+    [messageID, fileName, fileType, fileSize, fileData]
+  );
+
+  const attachmentID = result.insertId
+
+  return attachmentID
+}
+
+// GET /messages/:attachmentID/attachment
+export async function getAttachmentById(attachmentID) {
+  const [rows] = await pool.query(
+    `SELECT fileName, fileType, fileData FROM MessageAttachments WHERE attachmentID = ?`,
+    [attachmentID]
+  );
+  return rows[0];
+}
+
+export async function getAttachmentsForMessage(messageID) {
+  try {
+    const [attachments] = await pool.query(`
+      SELECT attachmentID, fileName, fileType, fileSize
+      FROM MessageAttachments
+      WHERE messageID = ?
+    `, [messageID]);
+
+    return attachments; // Returns an array of attachments (could be empty)
+  } catch (error) {
+    console.error("Error fetching attachments:", error);
+    return [];
+  }
 }
 
 

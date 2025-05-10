@@ -3,6 +3,7 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import multer from "multer";
 import {
   getUsers,
   getUser,
@@ -42,13 +43,18 @@ import {
   markChatAsRead,
   getUnreadMessageCounts,
   getUsersNotInPrivateWith,
-  getUsersNotCurrent
+  getUsersNotCurrent,
+  insertAttachment,
+  getAttachmentById,
+  getAttachmentsForMessage
 } from "./database.js";
 import http from 'http';
 import { Server } from 'socket.io';
 
 
 const app = express();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Note ".env" is a local only file which is why there won't be one when we clone from repo
 dotenv.config({ path: "./.env" });
@@ -347,23 +353,46 @@ io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} joined chat ${chatID}`);
   });
 
-  // Receive and broadcast new message
+  // Receive and broadcast new message with attachment
   socket.on("sendMessage", async (messageData) => {
-    const { senderUserID, chatID } = messageData;
+    const { senderUserID, chatID, messageText, attachment } = messageData;
+
     try {
+      // Fetch sender details
       const sender = await getUser(senderUserID);
       const senderName = sender?.firstName && sender?.lastName
         ? `${sender.firstName} ${sender.lastName}`
         : "Unknown";
-      io.to(chatID).emit("receiveMessage", {
-        ...messageData,
+
+      // Create the message object with attachment info if present
+      const message = {
+        senderUserID,
+        chatID,
+        messageText,
+        timestamp: new Date().toISOString(),
         senderName,
-      });
+        attachment: attachment ? {
+          attachmentID: attachment.attachmentID,
+          fileName: attachment.fileName,
+          fileType: attachment.fileType,
+          fileSize: attachment.fileSize,
+          downloadUrl: `/messages/${attachment.attachmentID}/attachment`, // URL to download attachment
+        } : null,
+      };
+
+      // Broadcast the message to the specified chat room
+      io.to(chatID).emit("receiveMessage", message);
     } catch (error) {
       console.error("Error getting sender for socket message:", error);
+
+      // Broadcast the message even if sender lookup fails
       io.to(chatID).emit("receiveMessage", {
-        ...messageData,
+        senderUserID,
+        chatID,
+        messageText,
+        timestamp: new Date().toISOString(),
         senderName: "Unknown",
+        attachment: null,
       });
     }
   });
@@ -393,7 +422,11 @@ app.get("/chats/:userID", async (req, res) => {
 app.get("/chats/:chatID/messages", async (req, res) => {
   try {
     const chatID = req.params.chatID;
+
+    // Get messages for the chat
     const messages = await getMessages(chatID);
+
+    // Return the messages with attachment data
     res.json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
@@ -401,28 +434,49 @@ app.get("/chats/:chatID/messages", async (req, res) => {
   }
 });
 
-app.post("/chats/:chatID/messages", async (req, res) => {
+app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
   try {
     const { chatID } = req.params;
     const { senderUserID, messageText } = req.body;
+    const file = req.file;
 
-    if (!senderUserID || !messageText.trim()) {
-      return res.status(400).json({ message: "senderUserID and messageText are required." });
+    if (!senderUserID || (!messageText.trim() && !file)) {
+      return res.status(400).json({ message: "Message text or file required." });
     }
 
-    const newMessage = await sendMessage(chatID, senderUserID, messageText);
+    const newMessage = await sendMessage(chatID, senderUserID, messageText.trim() || "");
 
     if (!newMessage) {
       return res.status(500).json({ message: "Failed to send message" });
     }
 
-    res.status(201).json({
+    const response = {
       messageID: newMessage.messageID,
       senderUserID: newMessage.senderUserID,
       chatID: newMessage.chatID,
       messageText: newMessage.messageText,
       timestamp: newMessage.timestamp,
-    });
+    };
+
+
+    if (file) {
+      const newAttachmentID = await insertAttachment({
+        messageID: newMessage.messageID,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        fileData: file.buffer,
+      });
+
+      response.attachment = {
+        attachmentID: newAttachmentID ,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+      };
+    }
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error("Error sending message:", error);
@@ -581,7 +635,7 @@ app.post('/chats/:chatID/read', async (req, res) => {
   const { chatID } = req.params;
   try {
     await markChatAsRead(userID, chatID);
-    console.log("Chat raed:", chatID)
+    console.log("Chat read:", chatID)
     res.sendStatus(200);
   } catch (err) {
     console.error("Error updating ChatReads:", err);
@@ -614,6 +668,24 @@ app.delete('/chats/:chatID', async (req, res) => {
   } catch (err) {
     console.error("Delete chat error:", err);
     res.status(500).json({ error: "Failed to delete chat" });
+  }
+});
+
+// Download attachment by attachment ID
+app.get('/messages/:attachmentID/attachment', authenticateToken, async (req, res) => {
+  const { attachmentID } = req.params;
+
+  try {
+    const file = await getAttachmentById(attachmentID);
+
+    if (!file) return res.status(404).send('Attachment not found');
+
+    res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    res.setHeader('Content-Type', file.fileType);
+    res.send(file.fileData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Database error');
   }
 });
 
