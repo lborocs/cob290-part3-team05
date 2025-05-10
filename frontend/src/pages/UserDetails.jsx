@@ -7,6 +7,10 @@ import ProjectGanttChart from '../components/analytics/chart/ProjectGanttChart';
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
 
+const _user = localStorage.getItem('user');
+const USER = _user ? JSON.parse(_user) : null;
+
+
 const UserDetails = () => {
   const { userId } = useParams();
   const [user, setUser] = useState(null);
@@ -301,15 +305,21 @@ const UserDetails = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      {/* Navigation */}
-      <div className="mb-4">
-        <Link to="/analytics" className="text-[#5A2777] hover:text-[#8A4BA7] flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-          Back to Users
-        </Link>
-      </div>
+  {/* Navigation */}
+  {USER?.userType !== "Employee" && (
+    <div className="mb-4">
+      <Link to="/analytics" className="text-[#5A2777] hover:text-[#8A4BA7] flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fillRule="evenodd"
+            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+            clipRule="evenodd"
+          />
+        </svg>
+        Back to Users
+      </Link>
+    </div>
+  )}
       
       {/* User Header */}
       <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-[#D9D9D9] mb-6">
