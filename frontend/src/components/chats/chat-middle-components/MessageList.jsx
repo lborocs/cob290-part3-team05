@@ -1,11 +1,14 @@
 import React from "react";
+import { Tooltip } from "react-tooltip";
 
 // React icons
 import { FaUserAlt } from "react-icons/fa";
+import { IoMdDownload } from "react-icons/io";
 
 // Components
 import { EditMessage } from "./EditMessage";
 import MessageOptions from "./MessageOptions";
+import MediaComponent from "./MediaComponent";
 
 const MessageList = ({
   messages,
@@ -89,7 +92,7 @@ const MessageList = ({
 
                 {/* Message with dot menu */}
                 <div
-                  className={`relative w-full flex ${
+                  className={`relative z-1 w-full flex ${
                     msg.senderUserID === currentUserID
                       ? "justify-end"
                       : "justify-start"
@@ -99,7 +102,7 @@ const MessageList = ({
                     <div
                       className={`
                         absolute top-1/2 transform -translate-y-1/2
-                        opacity-0 group-hover:opacity-100 transition-opacity
+                        opacity-0 group-hover:opacity-100 transition-opacity 
                         ${
                           msg.senderUserID === currentUserID
                             ? "left-[-50px]"
@@ -120,7 +123,7 @@ const MessageList = ({
 
                   {/* Message Bubble */}
                   <div
-                    className={`p-3 rounded-2xl text-sm shadow-md max-w-[100%] break-words ${
+                    className={`p-3 z-1 rounded-2xl text-sm shadow-md max-w-[100%] break-words ${
                       msg.senderUserID === currentUserID
                         ? "bg-[var(--color-overlay-light)] text-white rounded-br-none"
                         : "bg-white text-black rounded-bl-none"
@@ -144,27 +147,51 @@ const MessageList = ({
                           filteredIndexes[searchIndex] === index
                         )}
                         {msg.attachment !== null && (
-                          <ul className="space-y-1">
-                            <li key={msg.attachment.attachmentID}>
-                              <button
-                                onClick={() =>
-                                  handleDownload(
-                                    msg.attachment.attachmentID,
-                                    msg.attachment.fileName
-                                  )
-                                }
-                                className="text-blue-500 underline text-xs flex items-center gap-1"
-                              >
-                                📎 {msg.attachment.fileName}
-                              </button>
-                            </li>
-                          </ul>
+                          <>
+                            {msg.attachment.fileType === "application/pdf" && (
+                              <div className="flex flex-col items-center space-y-2">
+                                <span className="text-sm text-gray-600">
+                                  PDF Preview:
+                                </span>
+                                <embed
+                                  src={`/api/messages/${msg.attachment.attachmentID}/attachment`}
+                                  type="application/pdf"
+                                  width="100%"
+                                  height="300px"
+                                  className="border rounded-lg"
+                                />
+                              </div>
+                            )}
+                            {console.log(msg.attachment.fileType)}
+                            <MediaComponent msg={msg} />
+
+                            <button
+                              onClick={() =>
+                                handleDownload(
+                                  msg.attachment.attachmentID,
+                                  msg.attachment.fileName
+                                )
+                              }
+                              className="text-blue-500 underline text-xs flex items-center justify-center gap-1"
+                              data-tooltip-content="Download content"
+                              data-tooltip-id={`download-tooltip-${msg.attachment.attachmentID}`}
+                              data-tooltip-place="bottom"
+                            >
+                              <IoMdDownload /> {msg.attachment.fileName}
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
+            )}
+            {msg.attachment !== null && (
+              <Tooltip
+                id={`download-tooltip-${msg.attachment.attachmentID}`}
+                className="z-1000"
+              />
             )}
           </div>
         )
