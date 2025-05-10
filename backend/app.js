@@ -426,28 +426,8 @@ app.get("/chats/:chatID/messages", async (req, res) => {
     // Get messages for the chat
     const messages = await getMessages(chatID);
 
-    // Fetch attachments for each message (if any)
-    const messagesWithAttachments = await Promise.all(
-      messages.map(async (message) => {
-        // Get the attachment for the message (if any)
-        const attachments = await getAttachmentsForMessage(message.messageID);
-
-        // Construct the message with attachment details
-        return {
-          ...message,
-          attachment: attachments.length > 0 ? {
-            attachmentID: attachments[0].attachmentID,
-            fileName: attachments[0].fileName,
-            fileType: attachments[0].fileType,
-            fileSize: attachments[0].fileSize,
-            downloadUrl: `/messages/${attachments[0].attachmentID}/attachment`,
-          } : null, // Include attachment data or null if no attachment
-        };
-      })
-    );
-
     // Return the messages with attachment data
-    res.json(messagesWithAttachments);
+    res.json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Database error" });
@@ -464,25 +444,12 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "Message text or file required." });
     }
 
-    // Step 1: Insert the message without the file
     const newMessage = await sendMessage(chatID, senderUserID, messageText.trim() || "");
 
     if (!newMessage) {
       return res.status(500).json({ message: "Failed to send message" });
     }
 
-    // Step 2: If a file was uploaded, insert the file as a separate record in the attachments table
-    if (file) {
-      const attachmentID = await insertAttachment({
-        messageID: newMessage.messageID,
-        fileName: file.originalname,
-        fileType: file.mimetype,
-        fileSize: file.size,
-        fileData: file.buffer, // Storing file data in memory (this could be changed to store on disk or cloud storage)
-      });
-    }
-
-    // Step 3: Respond with message details and attachment (if available)
     const response = {
       messageID: newMessage.messageID,
       senderUserID: newMessage.senderUserID,
@@ -491,10 +458,18 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
       timestamp: newMessage.timestamp,
     };
 
-    // Include attachment information if present
+
     if (file) {
+      const newAttachmentID = await insertAttachment({
+        messageID: newMessage.messageID,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        fileData: file.buffer,
+      });
+
       response.attachment = {
-        attachmentID: attachmentID,
+        attachmentID: newAttachmentID ,
         fileName: file.originalname,
         fileType: file.mimetype,
         fileSize: file.size,

@@ -553,19 +553,20 @@ export async function getMessages(chatID) {
           timestamp,
           isDeleted: Boolean(isDeleted),
           isEdited: Boolean(isEdited),
-          attachments: [],
+          attachment: null,
         });
       }
 
+      // If the message has an attachment, set it as an object on the message
       if (attachmentID) {
-        messagesMap.get(messageID).attachments.push({
+        messagesMap.get(messageID).attachment = {
           attachmentID,
           fileName,
           fileType,
           fileSize,
           uploadedAt,
-          downloadUrl: `/api/messages/${attachmentID}/attachment`, // adjust as needed
-        });
+          downloadUrl: `/api/messages/${attachmentID}/attachment`, // Adjust download URL
+        };
       }
     }
 

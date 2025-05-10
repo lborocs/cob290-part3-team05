@@ -556,7 +556,15 @@ const Chats = () => {
           [message.chatID]: (prev[message.chatID] || 0) + 1,
         }));
       } else {
-        setMessages((prevMessages) => [...prevMessages, message]);
+        setMessages((prevMessages) => {
+          // Ensure attachment data is correctly handled when displaying the message
+          return [
+            ...prevMessages,
+            {
+              ...message,
+            },
+          ];
+        });
         scrollToBottom();
       }
 
