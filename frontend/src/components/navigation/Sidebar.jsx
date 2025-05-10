@@ -7,9 +7,8 @@ import { useNavigate } from "react-router-dom";
 //React icons
 import { PiChatsCircle } from "react-icons/pi";
 import { LuChartNoAxesCombined } from "react-icons/lu";
-import { RxDashboard } from "react-icons/rx";
 import { GoSignOut } from "react-icons/go";
-import { FaRegUserCircle } from "react-icons/fa";
+import { TfiDashboard } from "react-icons/tfi";
 import { FaArrowRight } from "react-icons/fa6";
 
 import logo from "../../assets/img/make-it-all-icon.png";
@@ -73,7 +72,7 @@ export const Sidebar = () => {
     {
       name: "Dashboard",
       path: user ? `/user-details/${USER_ID}` : "/", // Dynamically set the path using user.id
-      icon: <RxDashboard className="flex-none text-2xl" />,
+      icon: <TfiDashboard className="flex-none text-2xl" />,
       allowedFor: ["Employee"], // Only employees can view this
     },
     {
@@ -85,6 +84,7 @@ export const Sidebar = () => {
       name: "Analytics",
       path: "/analytics",
       icon: <LuChartNoAxesCombined className="flex-none text-2xl" />,
+      allowedFor: ["Manager"],
     },
   ];
 
