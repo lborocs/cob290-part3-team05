@@ -229,7 +229,7 @@ const ProjectDetails = () => {
       },
       title: {
         display: true,
-        text: 'Tasks Per Project by Status',
+        text: 'Tasks Per Employee by Status',
         font: {
           size: 18,
           weight: 'bold',
