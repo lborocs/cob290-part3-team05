@@ -512,7 +512,7 @@ const Chats = () => {
     const onReceiveMessage = (message) => {
       const isSystemMessage = message.senderUserID === 0;
       const isCurrentChat = String(message.chatID) === String(chatID);
-      console.log("Received message data: ", messageData);
+      console.log("Received message data: ", message);
       const isOwnSystemMessage =
         String(message.triggeredBy) === String(currentUserID);
 
