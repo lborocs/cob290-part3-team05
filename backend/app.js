@@ -352,23 +352,46 @@ io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} joined chat ${chatID}`);
   });
 
-  // Receive and broadcast new message
+  // Receive and broadcast new message with attachment
   socket.on("sendMessage", async (messageData) => {
-    const { senderUserID, chatID } = messageData;
+    const { senderUserID, chatID, messageText, attachment } = messageData;
+
     try {
+      // Fetch sender details
       const sender = await getUser(senderUserID);
       const senderName = sender?.firstName && sender?.lastName
         ? `${sender.firstName} ${sender.lastName}`
         : "Unknown";
-      io.to(chatID).emit("receiveMessage", {
-        ...messageData,
+
+      // Create the message object with attachment info if present
+      const message = {
+        senderUserID,
+        chatID,
+        messageText,
+        timestamp: new Date().toISOString(),
         senderName,
-      });
+        attachment: attachment ? {
+          attachmentID: attachment.attachmentID,
+          fileName: attachment.fileName,
+          fileType: attachment.fileType,
+          fileSize: attachment.fileSize,
+          downloadUrl: `/messages/${attachment.attachmentID}/attachment`, // URL to download attachment
+        } : null,
+      };
+
+      // Broadcast the message to the specified chat room
+      io.to(chatID).emit("receiveMessage", message);
     } catch (error) {
       console.error("Error getting sender for socket message:", error);
+
+      // Broadcast the message even if sender lookup fails
       io.to(chatID).emit("receiveMessage", {
-        ...messageData,
+        senderUserID,
+        chatID,
+        messageText,
+        timestamp: new Date().toISOString(),
         senderName: "Unknown",
+        attachment: null,
       });
     }
   });
