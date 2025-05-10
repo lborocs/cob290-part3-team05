@@ -3,7 +3,7 @@ name: GCP Deploy
 on:
   push:
     branches:
-      - attachments-testing # Whenever you push to the main branch, this job will run
+      - main # Whenever you push to the main branch, this job will run
 
 jobs:
   deploy:
