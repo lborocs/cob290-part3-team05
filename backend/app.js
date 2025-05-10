@@ -11,7 +11,6 @@ import {
   getUserByEmail,
   getProjects,
   getProjectData,
-  
   isLeadingProject,
   getProjectsTeamLeader,
   getNumProjectUser,
@@ -27,7 +26,6 @@ import {
   getUserTasksProject,
   getBurnDownData,
   getRecentActivityProject,
-  
   getChats,
   getMessages,
   sendMessage,
@@ -46,11 +44,10 @@ import {
   getUsersNotCurrent,
   insertAttachment,
   getAttachmentById,
-  getAttachmentsForMessage
+  getAttachmentsForMessage,
 } from "./database.js";
-import http from 'http';
-import { Server } from 'socket.io';
-
+import http from "http";
+import { Server } from "socket.io";
 
 const app = express();
 const storage = multer.memoryStorage();
@@ -111,8 +108,21 @@ function checkInternalRequest(req, res, next) {
 
 // Protected routes
 app.get("/users", authenticateToken, async (req, res) => {
-  const users = await getUsers();
-  res.send(users);
+  try {
+    const userRole = req.user.userType;
+
+    // Check if the user is a manager
+    if (userRole === "Manager") {
+      const users = await getUsers();
+      return res.send(users);
+    }
+
+    // If not a manager, return unauthorized
+    return res.status(403).json({ message: "Unauthorized: Access denied" });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Server error while fetching users" });
+  }
 });
 
 app.get("/users/:id", async (req, res) => {
@@ -122,9 +132,20 @@ app.get("/users/:id", async (req, res) => {
 });
 
 app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
-  // Check if admin or manager
-
+  const userRole = req.user.userType;
+  const userID = req.user.id;
   const id = req.params.id;
+  // Check if admin or manager
+  //Allow employee to see only their own data
+  if (userRole == "Employee") {
+    const hasAccess = id == userID;
+    if (!hasAccess) {
+      return res.status(403).json({
+        message: "Forbidden: You do not have permission to access this data",
+      });
+    }
+  }
+
   const numProject = await getNumProjectUser(id);
   const numTasks = await getNumTasksUser(id);
   const numCompletedTasks = await getNumCompletedTasks(id);
@@ -170,21 +191,22 @@ app.get("/projects", authenticateToken, async (req, res) => {
     const userRole = req.user.userType;
     const userID = req.user.id;
 
-    // If user is team leader just show projects they are leading or a employee on
-    if (userRole === "TeamLeader") {
-      const projects = await getProjectsTeamLeader(userID);
+    // If user is a manager, show all projects
+    if (userRole === "Manager") {
+      const projects = await getProjects();
       return res.send(projects);
     }
 
-    // If user is employee don't show projects
-    if (userRole === "Employee") {
-      return res.status(403).json({
-        message: "Forbidden: Employees do not have access to project data",
-      });
+    // Check if the user is leading any projects
+    const projects = await getProjectsTeamLeader(userID);
+    if (projects && projects.length > 0) {
+      return res.send(projects);
     }
 
-    const projects = await getProjects();
-    res.send(projects);
+    // If neither a manager nor leading any projects, return unauthorized
+    return res.status(403).json({
+      message: "Unauthorized",
+    });
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Server error while fetching projects" });
@@ -310,6 +332,13 @@ app.post("/login", async (req, res) => {
       lastName: user.lastName,
       userType: user.userType,
     };
+    // Check if user is leading any projects
+    const isLeadingProjects = await getProjectsTeamLeader(user.userID);
+    if (isLeadingProjects && isLeadingProjects.length > 0) {
+      payload.isLeadingProjects = true;
+    } else {
+      payload.isLeadingProjects = false;
+    }
 
     // Create and sign JWT
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
@@ -341,7 +370,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
-  path: "/socket.io/"
+  path: "/socket.io/",
 });
 
 io.on("connection", (socket) => {
@@ -360,9 +389,10 @@ io.on("connection", (socket) => {
     try {
       // Fetch sender details
       const sender = await getUser(senderUserID);
-      const senderName = sender?.firstName && sender?.lastName
-        ? `${sender.firstName} ${sender.lastName}`
-        : "Unknown";
+      const senderName =
+        sender?.firstName && sender?.lastName
+          ? `${sender.firstName} ${sender.lastName}`
+          : "Unknown";
 
       // Create the message object with attachment info if present
       const message = {
@@ -371,13 +401,15 @@ io.on("connection", (socket) => {
         messageText,
         timestamp: new Date().toISOString(),
         senderName,
-        attachment: attachment ? {
-          attachmentID: attachment.attachmentID,
-          fileName: attachment.fileName,
-          fileType: attachment.fileType,
-          fileSize: attachment.fileSize,
-          downloadUrl: `/messages/${attachment.attachmentID}/attachment`, // URL to download attachment
-        } : null,
+        attachment: attachment
+          ? {
+              attachmentID: attachment.attachmentID,
+              fileName: attachment.fileName,
+              fileType: attachment.fileType,
+              fileSize: attachment.fileSize,
+              downloadUrl: `/messages/${attachment.attachmentID}/attachment`, // URL to download attachment
+            }
+          : null,
       };
 
       // Broadcast the message to the specified chat room
@@ -441,10 +473,16 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
     const file = req.file;
 
     if (!senderUserID || (!messageText.trim() && !file)) {
-      return res.status(400).json({ message: "Message text or file required." });
+      return res
+        .status(400)
+        .json({ message: "Message text or file required." });
     }
 
-    const newMessage = await sendMessage(chatID, senderUserID, messageText.trim() || "");
+    const newMessage = await sendMessage(
+      chatID,
+      senderUserID,
+      messageText.trim() || ""
+    );
 
     if (!newMessage) {
       return res.status(500).json({ message: "Failed to send message" });
@@ -458,7 +496,6 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
       timestamp: newMessage.timestamp,
     };
 
-
     if (file) {
       const newAttachmentID = await insertAttachment({
         messageID: newMessage.messageID,
@@ -469,7 +506,7 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
       });
 
       response.attachment = {
-        attachmentID: newAttachmentID ,
+        attachmentID: newAttachmentID,
         fileName: file.originalname,
         fileType: file.mimetype,
         fileSize: file.size,
@@ -477,7 +514,6 @@ app.post("/chats/:chatID/messages", upload.single("file"), async (req, res) => {
     }
 
     res.status(201).json(response);
-
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ message: "Database error" });
@@ -563,7 +599,7 @@ app.post("/chats/:chatID/members", async (req, res) => {
     io.to(chatID).emit("memberUpdated", { chatID });
 
     // Send the system message back, just like the remove route
-    res.status(200).json({ message: 'User added', systemMessage });
+    res.status(200).json({ message: "User added", systemMessage });
   } catch (err) {
     console.error("Error adding member:", err);
     res.status(500).json({ error: "Failed to add member" });
@@ -572,13 +608,18 @@ app.post("/chats/:chatID/members", async (req, res) => {
 
 app.post("/chats", async (req, res) => {
   const { chatName, chatType, creatorID, userIDList } = req.body;
-  console.log(chatName)
+  console.log(chatName);
 
   try {
     const chatNameToSend = chatType === "Private" ? null : chatName;
-    console.log(chatNameToSend)
+    console.log(chatNameToSend);
 
-    const { chatID, alreadyExists, systemMessage } = await createChat(chatNameToSend, chatType, creatorID, userIDList);
+    const { chatID, alreadyExists, systemMessage } = await createChat(
+      chatNameToSend,
+      chatType,
+      creatorID,
+      userIDList
+    );
 
     if (systemMessage) {
       console.log("Emitting system message:", systemMessage);
@@ -593,63 +634,63 @@ app.post("/chats", async (req, res) => {
 });
 
 app.get("/users/not-in-private-with/:userID", async (req, res) => {
-  const { userID } = req.params
+  const { userID } = req.params;
 
   try {
-    const users = await getUsersNotInPrivateWith(userID)
-    res.json(users)
-  } catch(err) {
-    console.error("Error fetching users", err)
-    res.status(500).json({ error: "Failed to fetch users" })
+    const users = await getUsersNotInPrivateWith(userID);
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching users", err);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
-})
+});
 
 app.get("/users/not-current/:userID", async (req, res) => {
-  const { userID } = req.params
+  const { userID } = req.params;
 
   try {
-    const users = await getUsersNotCurrent(userID)
-    res.json(users)
-  } catch(err) {
-    console.error("Error fetching users", err)
-    res.status(500).json({ error: "Failed to fetch users" })
+    const users = await getUsersNotCurrent(userID);
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching users", err);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
-})
+});
 
-app.delete('/chats/:chatID/leave/:userID', async (req, res) => {
+app.delete("/chats/:chatID/leave/:userID", async (req, res) => {
   const { chatID, userID } = req.params;
 
   try {
     const systemMessage = await leaveGroup(chatID, userID, { kickedBy: true });
     io.to(chatID).emit("receiveMessage", systemMessage);
     io.to(chatID).emit("memberUpdated", { chatID });
-    res.status(200).json({ message: 'User removed', systemMessage });
+    res.status(200).json({ message: "User removed", systemMessage });
   } catch (err) {
     console.error("Leave group error:", err.message);
     res.status(400).json({ error: err.message });
   }
 });
 
-app.post('/chats/:chatID/read', async (req, res) => {
+app.post("/chats/:chatID/read", async (req, res) => {
   const { userID } = req.body;
   const { chatID } = req.params;
   try {
     await markChatAsRead(userID, chatID);
-    console.log("Chat read:", chatID)
+    console.log("Chat read:", chatID);
     res.sendStatus(200);
   } catch (err) {
     console.error("Error updating ChatReads:", err);
-    res.status(500).json({ error: 'Failed to update ChatReads' });
+    res.status(500).json({ error: "Failed to update ChatReads" });
   }
 });
 
-app.get('/chats/:userID/unread-counts', async (req, res) => {
+app.get("/chats/:userID/unread-counts", async (req, res) => {
   const { userID } = req.params;
 
   try {
     const rows = await getUnreadMessageCounts(userID);
     const counts = {};
-    rows.forEach(row => {
+    rows.forEach((row) => {
       counts[row.chatID] = row.unreadCount;
     });
     res.json(counts);
@@ -659,7 +700,7 @@ app.get('/chats/:userID/unread-counts', async (req, res) => {
   }
 });
 
-app.delete('/chats/:chatID', async (req, res) => {
+app.delete("/chats/:chatID", async (req, res) => {
   const { chatID } = req.params;
 
   try {
@@ -672,22 +713,29 @@ app.delete('/chats/:chatID', async (req, res) => {
 });
 
 // Download attachment by attachment ID
-app.get('/messages/:attachmentID/attachment', authenticateToken, async (req, res) => {
-  const { attachmentID } = req.params;
+app.get(
+  "/messages/:attachmentID/attachment",
+  authenticateToken,
+  async (req, res) => {
+    const { attachmentID } = req.params;
 
-  try {
-    const file = await getAttachmentById(attachmentID);
+    try {
+      const file = await getAttachmentById(attachmentID);
 
-    if (!file) return res.status(404).send('Attachment not found');
+      if (!file) return res.status(404).send("Attachment not found");
 
-    res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
-    res.setHeader('Content-Type', file.fileType);
-    res.send(file.fileData);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Database error');
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${file.fileName}"`
+      );
+      res.setHeader("Content-Type", file.fileType);
+      res.send(file.fileData);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Database error");
+    }
   }
-});
+);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

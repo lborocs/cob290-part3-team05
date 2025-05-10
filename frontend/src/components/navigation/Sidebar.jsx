@@ -15,6 +15,10 @@ import { FaArrowRight } from "react-icons/fa6";
 import logo from "../../assets/img/make-it-all-icon.png";
 import SidebarButton from "./SidebarButton";
 
+const USER = JSON.parse(localStorage.getItem("user"));
+const USER_TYPE = USER?.userType;
+const USER_ID = USER?.id;
+
 const ProfileIcon = ({ user }) => {
   const name = user.firstName + " " + user.lastName;
   const [first, last] = name.split(" ");
@@ -69,8 +73,9 @@ export const Sidebar = () => {
   const menuItems = [
     {
       name: "Dashboard",
-      path: "/",
+      path: user ? `/user-details/${USER_ID}` : "/", // Dynamically set the path using user.id
       icon: <RxDashboard className="flex-none text-2xl" />,
+      allowedFor: ["Employee"], // Only employees can view this
     },
     {
       name: "Chats",
@@ -83,6 +88,11 @@ export const Sidebar = () => {
       icon: <LuChartNoAxesCombined className="flex-none text-2xl" />,
     },
   ];
+
+  // Filter menu items based on userType
+const filteredMenuItems = menuItems.filter(
+  (item) => !item.allowedFor || item.allowedFor.includes(user?.userType)
+);
 
   // Sidebar expansion useState
   const [expanded, setExpanded] = useState(true);
@@ -135,7 +145,7 @@ export const Sidebar = () => {
         <nav>
           <div className="mt-[5rem]">
             {/* map through menu items to create navigation buttons */}
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const active = isActive(item.path);
               return (
                 <Link

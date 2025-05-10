@@ -34,11 +34,11 @@ const ProjectsTable = ({ data }) => {
   // Filter projects based on search term
   const filteredProjects = data.filter(project => {
     const projectTitle = project.projectTitle?.toLowerCase() || '';
-    const projectLeader = String(project.projectLeader).toLowerCase();
+    const projectLeaderName = String(project.projectLeaderName).toLowerCase();
     const status = getProjectStatus(project).toLowerCase();
     const term = searchTerm.toLowerCase();
     
-    return projectTitle.includes(term) || projectLeader.includes(term) || status.includes(term);
+    return projectTitle.includes(term) || projectLeaderName.includes(term) || status.includes(term);
   });
   
   const handleProjectClick = (projectId) => {
@@ -107,7 +107,7 @@ const ProjectsTable = ({ data }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[#2E3944]">
-                      {project.projectLeader}
+                      {project.projectLeaderName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}`}>

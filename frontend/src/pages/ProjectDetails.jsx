@@ -188,86 +188,86 @@ const ProjectDetails = () => {
         data: metrics.taskPerUser.map((user) => user.toDo), // To Do tasks
         backgroundColor: '#8e8e91', 
         borderRadius: 25, 
-        barThickness: 20, 
+        barThickness: 50, 
       },
       {
         label: 'In Progress',
         data: metrics.taskPerUser.map((user) => user.inProgress), // In Progress tasks
         backgroundColor: '#eab385', 
         borderRadius: 25, 
-        barThickness: 20, 
+        barThickness: 50, 
       },
       {
         label: 'Completed',
         data: metrics.taskPerUser.map((user) => user.completed), // Completed tasks
         backgroundColor: '#adda9d', 
         borderRadius: 25, 
-        barThickness: 20, 
+        barThickness: 50, 
       },
       {
         label: 'Overdue',
         data: metrics.taskPerUser.map((user) => user.overdue), // Overdue tasks
         backgroundColor: '#f5a3a3', 
         borderRadius: 25, 
-        barThickness: 20, 
+        barThickness: 50, 
       },
     ],
   };
 
-    const barOptions = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            font: {
-              size: 14,
-              family: 'Poppins, sans-serif', // Modern font
-            },
-            color: '#1C2341', // Dark text color
-          },
-        },
-        title: {
-          display: true,
-          text: 'Task Distribution by Employee',
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
           font: {
-            size: 18,
-            weight: 'bold',
+            size: 14,
+            family: 'Poppins, sans-serif', // Modern font
+          },
+          color: '#1C2341', // Dark text color
+        },
+      },
+      title: {
+        display: true,
+        text: 'Tasks Per Employee by Status',
+        font: {
+          size: 18,
+          weight: 'bold',
+          family: 'Poppins, sans-serif',
+        },
+        color: '#1C2341',
+      },
+    },
+    scales: {
+      x: {
+        stacked: true, // Stack bars horizontally
+        grid: {
+          display: false, // Hide grid lines for a cleaner look
+        },
+        ticks: {
+          font: {
+            size: 12,
             family: 'Poppins, sans-serif',
           },
-          color: '#1C2341',
+          color: '#2E3944',
         },
       },
-      scales: {
-        x: {
-          stacked: true, // Stack bars horizontally
-          grid: {
-            display: false, // Hide grid lines for a cleaner look
-          },
-          ticks: {
-            font: {
-              size: 12,
-              family: 'Poppins, sans-serif',
-            },
-            color: '#2E3944',
-          },
+      y: {
+        stacked: true, // Stack bars vertically
+        beginAtZero: true,
+        grid: {
+          color: '#D9D9D9', // Light grid lines
         },
-        y: {
-          stacked: true, // Stack bars vertically
-          beginAtZero: true,
-          grid: {
-            color: '#D9D9D9', // Light grid lines
+        ticks: {
+          font: {
+            size: 12,
+            family: 'Poppins, sans-serif',
           },
-          ticks: {
-            font: {
-              size: 12,
-              family: 'Poppins, sans-serif',
-            },
-            color: '#2E3944',
-          },
+          color: '#2E3944',
         },
       },
-    };
+    },
+  };
 
   if (loading) {
     return (
