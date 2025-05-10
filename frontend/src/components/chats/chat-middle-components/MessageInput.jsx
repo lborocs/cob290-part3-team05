@@ -46,6 +46,7 @@ const MessageInput = ({
             onChange={(e) => {
               setAttachment(e.target.files[0]);
             }}
+            disabled={attachment != null}
           />
         </label>
 
