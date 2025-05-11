@@ -28,7 +28,7 @@ export async function getUsers() {
 export async function getUser(id) {
   const [rows] = await pool.query(
     `
-    SELECT * 
+    SELECT userID, userEmail, firstName, lastName, userType
     FROM Users
     WHERE userID = ?
     `,
