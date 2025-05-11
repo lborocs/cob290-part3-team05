@@ -47,8 +47,6 @@ export const Sidebar = () => {
           "Content-Type": "application/json",
         };
 
-        console.log("Request headers:", headers);
-
         // Adjust the API endpoint based on your backend structure
         const response = await fetch(`/api/users/${decodedToken.id}`, {
           method: "GET",
