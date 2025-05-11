@@ -19,7 +19,7 @@ const pool = mysql
 // GET /users
 export async function getUsers() {
   const [rows] = await pool.query(
-    "SELECT * FROM Users WHERE userType = 'Employee'"
+    "SELECT userID, userEmail, firstName, lastName, userType FROM Users WHERE userType = 'Employee'"
   );
   return rows;
 }
