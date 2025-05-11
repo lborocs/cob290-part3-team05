@@ -28,7 +28,6 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
         if (!res.ok) throw new Error("Failed to fetch users");
 
         const userData = await res.json();
-        console.log(userData);
         setAvailablePrivUsers(userData);
         setAvailableUsers(userData);
       } catch (err) {
@@ -53,7 +52,6 @@ const CreateChatModal = ({ onCancel, onCreateChat, currentUserID }) => {
         if (!res.ok) throw new Error("Failed to fetch users");
 
         const userData = await res.json();
-        console.log(userData);
         setAvailableAllUsers(userData);
       } catch (err) {
         console.error("Failed to fetch users:", err);

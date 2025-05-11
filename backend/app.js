@@ -625,8 +625,9 @@ app.post("/chats", async (req, res) => {
       console.log("Emitting system message:", systemMessage);
       io.emit("receiveMessage", systemMessage);
     }
-
-    res.status(200).json({ success: true, chatID, alreadyExists });
+    const response = { success: true, chatID, alreadyExists, systemMessage }
+    console.log(response)
+    res.status(200).json(response);
   } catch (err) {
     console.error("Error creating chat", err);
     res.status(500).json({ error: "Failed to create chat" });

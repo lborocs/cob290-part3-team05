@@ -155,7 +155,7 @@ const Chats = () => {
     setNoChats(false);
     setChatID(chatID);
     socket.emit("joinChat", chatID);
-    console.log("Joined room:", chatID);
+    //console.log("Joined room:", chatID);
     setChatTitle(selectedChat.chatTitle);
     setChatType(selectedChat.chatType);
     setCreatorID(selectedChat.creatorID);
@@ -512,7 +512,6 @@ const Chats = () => {
     const onReceiveMessage = (message) => {
       const isSystemMessage = message.senderUserID === 0;
       const isCurrentChat = String(message.chatID) === String(chatID);
-      console.log("Received message data: ", message);
       const isOwnSystemMessage =
         String(message.triggeredBy) === String(currentUserID);
 
@@ -612,7 +611,7 @@ const Chats = () => {
 
   useEffect(() => {
     socket.on("messageDeleted", ({ messageID }) => {
-      console.log("Received messageDeleted:", messageID);
+      //console.log("Received messageDeleted:", messageID);
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           msg.messageID === messageID ? { ...msg, isDeleted: true } : msg
@@ -735,7 +734,7 @@ const Chats = () => {
 
   // Create a chat
   const createChat = async (chatData) => {
-    console.log(chatData);
+    //console.log(chatData);
     try {
       const res = await fetch(`/api/chats`, {
         method: "POST",
@@ -746,6 +745,8 @@ const Chats = () => {
       });
 
       if (!res.ok) throw new Error("Error whilst creating chat");
+      const data = await res.json();
+      socket.emit("sendMessage", data.systemMessage);
     } catch (err) {
       console.error("Failed to create chat:", err);
     }

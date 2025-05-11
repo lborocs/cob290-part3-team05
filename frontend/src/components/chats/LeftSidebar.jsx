@@ -19,12 +19,17 @@ const LeftSidebar = ({
   unreadCounts,
   currentUserID,
 }) => {
-  const filteredChats = chats.filter((chat) =>
-    chat.chatTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredChats = (chats || []).filter(
+    (chat) =>
+      chat && chat.chatTitle?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const directMessages = filteredChats.filter((chat) => chat.chatType === "Private");
-  const groupMessages = filteredChats.filter((chat) => chat.chatType === "Group");
+  const directMessages = filteredChats.filter(
+    (chat) => chat.chatType === "Private"
+  );
+  const groupMessages = filteredChats.filter(
+    (chat) => chat.chatType === "Group"
+  );
   const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
 
   useEffect(() => {
@@ -59,10 +64,11 @@ const LeftSidebar = ({
         {["direct", "groups"].map((tab) => (
           <button
             key={tab}
-            className={`relative flex-1 text-sm text-center py-1 ${activeTab === tab
-              ? "font-bold text-white"
-              : "text-[var(--color-white)]"
-              }`}
+            className={`relative flex-1 text-sm text-center py-1 ${
+              activeTab === tab
+                ? "font-bold text-white"
+                : "text-[var(--color-white)]"
+            }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab.toUpperCase()}

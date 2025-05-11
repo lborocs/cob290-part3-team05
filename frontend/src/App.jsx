@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import "./App.css";
 import { Route, Routes, Navigate } from "react-router-dom"; // Import routing components
 import { jwtDecode } from "jwt-decode";
 
 import Layout from "./pages/Layout";
-import Dashboard from "./pages/Dashboard";
 import NoPage from "./pages/NoPage";
 import Login from "./pages/Login";
 import Chats from "./pages/Chats";

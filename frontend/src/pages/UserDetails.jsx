@@ -70,8 +70,6 @@ const UserDetails = () => {
           "Content-Type": "application/json",
         };
 
-        console.log("Request headers:", headers);
-
         const response = await fetch(`/api/users/${userId}`, {
           method: "GET",
           headers: headers,
@@ -153,8 +151,6 @@ const UserDetails = () => {
     startDate: project.startDate.split("T")[0], // Extract date part
     endDate: project.dueDate.split("T")[0], // Extract date part
   }));
-
-  console.log(projects);
 
   // Doughnut Chart with improved colors
   const tasksData = {

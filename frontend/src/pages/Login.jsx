@@ -102,8 +102,6 @@ const Login = () => {
 
     // API Request
     try {
-      console.log("Sending login request with:", loginData);
-
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
@@ -113,7 +111,6 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (response.ok) {
         if (data.accessToken) {
