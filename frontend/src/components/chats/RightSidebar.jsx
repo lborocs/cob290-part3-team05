@@ -64,16 +64,6 @@ const RightSidebar = ({
           <p className="text-sm text-gray-300">
             {selectedUser?.userEmail || "Email not available"}
           </p>
-
-          {/* Shared Files Section */}
-          <div className="mt-6 w-full">
-            <div className="flex justify-between">
-              <h3 className="font-bold text-lg">Shared Files</h3>
-              <span className="text-sm text-gray-300 cursor-pointer">
-                View All
-              </span>
-            </div>
-          </div>
         </>
       ) : (
         <>
