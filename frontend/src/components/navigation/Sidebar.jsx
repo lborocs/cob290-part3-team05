@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { Tooltip } from "react-tooltip";
 
 //React icons
 import { PiChatsCircle } from "react-icons/pi";
@@ -199,12 +200,18 @@ export const Sidebar = () => {
               onClick={userSettings}
             >
               <ProfileIcon user={user} />
-              <div className="flex flex-col items-start">
-                <span>{user.firstName + " " + user.lastName}</span>
+              <div
+                className="flex flex-col items-start"
+                data-tooltip-content={user.firstName + " " + user.lastName}
+                data-tooltip-id="profile-tooltip"
+                data-tooltip-place="right"
+              >
+                <span>{user.firstName}</span>
                 <span className="font-extralight">{user.userType}</span>
               </div>
             </SidebarButton>
           )}
+          <Tooltip id="profile-tooltip" />
         </div>
       </div>
     </>
