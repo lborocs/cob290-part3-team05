@@ -551,7 +551,7 @@ app.delete("/messages/:messageID", async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
     io.to(chatID).emit("messageDeleted", { messageID });
-    res.status(200).json({ message: "Message deleted" });
+    res.status(204).json({ message: "Message deleted" });
   } catch (err) {
     console.error("Error deleting message:", err);
     res.status(500).json({ message: "Server error" });
@@ -568,7 +568,7 @@ app.put("/messages/:messageID", async (req, res) => {
 
   const success = await editMessage(messageID, newText);
   if (success) {
-    res.status(200).json({ message: "Message updated." });
+    res.status(201).json({ message: "Message updated." });
   } else {
     res.status(404).json({ message: "Message not found." });
   }
@@ -580,7 +580,7 @@ app.put("/chats/:chatID/title", async (req, res) => {
 
   try {
     await updateGroupTitle(chatID, newTitle);
-    res.status(200).json({ message: "Chat title updated" });
+    res.status(201).json({ message: "Chat title updated" });
   } catch (err) {
     console.error("Error updating chat title:", err);
     res.status(500).json({ error: "Server error" });
@@ -621,7 +621,7 @@ app.post("/chats/:chatID/members", async (req, res) => {
     io.to(chatID).emit("memberUpdated", { chatID });
 
     // Send the system message back, just like the remove route
-    res.status(200).json({ message: "User added", systemMessage });
+    res.status(201).json({ message: "User added", systemMessage });
   } catch (err) {
     console.error("Error adding member:", err);
     res.status(500).json({ error: "Failed to add member" });
@@ -663,7 +663,7 @@ app.delete("/chats/:chatID/leave/:userID", async (req, res) => {
     const systemMessage = await leaveGroup(chatID, userID, { kickedBy: true });
     io.to(chatID).emit("receiveMessage", systemMessage);
     io.to(chatID).emit("memberUpdated", { chatID });
-    res.status(200).json({ message: "User removed", systemMessage });
+    res.status(204).json({ message: "User removed", systemMessage });
   } catch (err) {
     console.error("Leave group error:", err.message);
     res.status(400).json({ error: err.message });
@@ -676,7 +676,7 @@ app.post("/chats/:chatID/read", async (req, res) => {
   try {
     await markChatAsRead(userID, chatID);
     console.log("Chat read:", chatID);
-    res.sendStatus(200);
+    res.sendStatus(201);
   } catch (err) {
     console.error("Error updating ChatReads:", err);
     res.status(500).json({ error: "Failed to update ChatReads" });
@@ -704,7 +704,7 @@ app.delete("/chats/:chatID", async (req, res) => {
 
   try {
     const result = await deleteChat(chatID);
-    res.status(200).json(result);
+    res.status(204).json(result);
   } catch (err) {
     console.error("Delete chat error:", err);
     res.status(500).json({ error: "Failed to delete chat" });
