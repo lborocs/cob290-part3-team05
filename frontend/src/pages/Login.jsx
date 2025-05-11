@@ -403,14 +403,6 @@ const Login = () => {
               >
                 Log in
               </button>
-              <button
-                onClick={toggleRightBox}
-                className={`mt-4 p-2 bg-transparent text-[var(--color-black)] rounded mx-auto ${
-                  createNewAccount ? "hidden" : ""
-                }`}
-              >
-                Sign Up
-              </button>
             </div>
           </div>
 
@@ -578,12 +570,6 @@ const Login = () => {
                       "Please accept the terms and conditions."}
                   </span>
                 </form>
-                <button
-                  onClick={signup}
-                  className={`mt-4 p-2 bg-[var(--color-overlay)] text-[var(--color-white)] rounded mx-auto hover:bg-[var(--color-hover)]`}
-                >
-                  Sign Up
-                </button>
                 <button
                   onClick={toggleRightBox}
                   className="mt-4 p-2 bg-transparent text-[var(--color-white)] rounded mx-auto underline lg:hidden"
