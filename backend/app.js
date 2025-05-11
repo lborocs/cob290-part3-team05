@@ -114,7 +114,7 @@ app.get("/users", authenticateToken, async (req, res) => {
     // Check if the user is a manager
     if (userRole === "Manager") {
       const users = await getUsers();
-      return res.send(users);
+      return res.status(200).send(users);
     }
 
     // If not a manager, return unauthorized
@@ -128,7 +128,7 @@ app.get("/users", authenticateToken, async (req, res) => {
 app.get("/users/:id", async (req, res) => {
   const id = req.params.id;
   const user = await getUser(id);
-  res.send(user);
+  res.status(200).send(user);
 });
 
 app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
@@ -185,6 +185,30 @@ app.post("/users", async (req, res) => {
   res.status(201).send(user);
 });
 
+app.get("/users/not-in-private-with/:userID", async (req, res) => {
+  const { userID } = req.params;
+
+  try {
+    const users = await getUsersNotInPrivateWith(userID);
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Error fetching users", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+app.get("/users/not-current/:userID", async (req, res) => {
+  const { userID } = req.params;
+
+  try {
+    const users = await getUsersNotCurrent(userID);
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Error fetching users", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
 // Add project endpoints
 app.get("/projects", authenticateToken, async (req, res) => {
   try {
@@ -194,13 +218,13 @@ app.get("/projects", authenticateToken, async (req, res) => {
     // If user is a manager, show all projects
     if (userRole === "Manager") {
       const projects = await getProjects();
-      return res.send(projects);
+      return res.status(200).send(projects);
     }
 
     // Check if the user is leading any projects
     const projects = await getProjectsTeamLeader(userID);
     if (projects && projects.length > 0) {
-      return res.send(projects);
+      return res.status(200).send(projects);
     }
 
     // If neither a manager nor leading any projects, return unauthorized
@@ -241,7 +265,7 @@ app.get("/project/:id", authenticateToken, async (req, res) => {
       userID: userID,
     };
 
-    res.send(responseData);
+    res.status(200).send(responseData);
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error while fetching project" });
@@ -290,14 +314,12 @@ app.get("/project/:id/analytics", authenticateToken, async (req, res) => {
       recentActivityProject: recentActivityProject,
     };
 
-    res.send(responseData);
+    res.status(200).send(responseData);
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error while fetching project" });
   }
 });
-
-// Project Analytics
 
 app.post("/login", async (req, res) => {
   try {
@@ -346,7 +368,7 @@ app.post("/login", async (req, res) => {
     });
 
     // Return token to client
-    res.json({
+    res.status(201).json({
       message: "Login successful",
       accessToken,
       user: payload,
@@ -357,9 +379,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Socket.IO initialization
 const server = http.createServer(app);
 
-// Socket.IO initialization
 const io = new Server(server, {
   cors: {
     origin: [
@@ -445,7 +467,7 @@ app.get("/chats/:userID", async (req, res) => {
   try {
     const userID = req.params.userID;
     const chats = await getChats(userID);
-    res.json(chats);
+    res.status(200).json(chats);
   } catch (error) {
     res.status(500).json({ message: "Database connection failed" });
   }
@@ -459,7 +481,7 @@ app.get("/chats/:chatID/messages", async (req, res) => {
     const messages = await getMessages(chatID);
 
     // Return the messages with attachment data
-    res.json(messages);
+    res.status(200).json(messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Database error" });
@@ -569,7 +591,7 @@ app.get("/chats/:chatID/non-members", async (req, res) => {
   const { chatID } = req.params;
   try {
     const users = await getNonMembers(chatID);
-    res.json(users);
+    res.status(200).json(users);
   } catch (err) {
     console.error("Error fetching non-members:", err);
     res.status(500).json({ error: "Server error" });
@@ -580,7 +602,7 @@ app.get("/chats/:chatID/members", async (req, res) => {
   const { chatID } = req.params;
   try {
     const members = await getChatMembers(chatID);
-    res.json(members);
+    res.status(200).json(members);
   } catch (err) {
     console.error("Error fetching chat members:", err);
     res.status(500).json({ message: "Server error" });
@@ -627,34 +649,10 @@ app.post("/chats", async (req, res) => {
     }
     const response = { success: true, chatID, alreadyExists, systemMessage }
     console.log(response)
-    res.status(200).json(response);
+    res.status(201).json(response);
   } catch (err) {
     console.error("Error creating chat", err);
     res.status(500).json({ error: "Failed to create chat" });
-  }
-});
-
-app.get("/users/not-in-private-with/:userID", async (req, res) => {
-  const { userID } = req.params;
-
-  try {
-    const users = await getUsersNotInPrivateWith(userID);
-    res.json(users);
-  } catch (err) {
-    console.error("Error fetching users", err);
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
-
-app.get("/users/not-current/:userID", async (req, res) => {
-  const { userID } = req.params;
-
-  try {
-    const users = await getUsersNotCurrent(userID);
-    res.json(users);
-  } catch (err) {
-    console.error("Error fetching users", err);
-    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
@@ -694,7 +692,7 @@ app.get("/chats/:userID/unread-counts", async (req, res) => {
     rows.forEach((row) => {
       counts[row.chatID] = row.unreadCount;
     });
-    res.json(counts);
+    res.status(200).json(counts);
   } catch (err) {
     console.error("Failed to fetch unread message counts:", err);
     res.status(500).json({ error: "Failed to fetch unread counts" });
@@ -730,7 +728,7 @@ app.get(
         `attachment; filename="${file.fileName}"`
       );
       res.setHeader("Content-Type", file.fileType);
-      res.send(file.fileData);
+      res.status(200).send(file.fileData);
     } catch (err) {
       console.error(err);
       res.status(500).send("Database error");
