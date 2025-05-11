@@ -176,7 +176,7 @@ app.get("/users/:id/analytics", authenticateToken, async (req, res) => {
     recentActivityUser: recentActivityUser,
     ganttChartData: ganttChartData,
   };
-  res.send(responseData);
+  res.status(200).send(responseData);
 });
 
 app.post("/users", async (req, res) => {
